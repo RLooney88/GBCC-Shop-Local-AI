@@ -22,6 +22,18 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Serve static files from the static directory with specific headers for widget.js
+app.use('/static', express.static(path.join(process.cwd(), 'static'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
+
 // Create static directory if it doesn't exist
 const staticDir = path.join(process.cwd(), "static");
 if (!fs.existsSync(staticDir)) {
@@ -48,7 +60,7 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api") || path === "/widget.js" || path.startsWith("/static")) {
+    if (path.startsWith("/api") || path.startsWith("/static")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
@@ -67,25 +79,6 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = registerRoutes(app);
-
-  // Register widget endpoint before setting up Vite
-  app.get('/widget.js', async (req, res, next) => {
-    try {
-      const widgetPath = path.join(process.cwd(), 'client', 'public', 'widget.js');
-      const content = await fs.promises.readFile(widgetPath, 'utf8');
-
-      res.set({
-        'Content-Type': 'application/javascript; charset=utf-8',
-        'Cache-Control': 'no-cache',
-      });
-
-      log(`Serving widget.js to ${req.get('origin') || 'unknown origin'}`);
-      res.send(content);
-    } catch (error: any) {
-      log(`Error serving widget.js: ${error.message}`);
-      res.status(500).send('Error loading widget');
-    }
-  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

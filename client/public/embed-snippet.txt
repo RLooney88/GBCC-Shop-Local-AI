@@ -1,2 +1,2 @@
 <!-- Add this code where you want the Shop Local Assistant to appear -->
-<script src="https://ai-local-buddy-rlooney.replit.app/widget.js"></script>
+<script src="https://ai-local-buddy-rlooney.replit.app/static/js/widget.js?v=1.0.0"></script>
