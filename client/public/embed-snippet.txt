@@ -1,3 +1,6 @@
+<!-- Add this script tag where you want the Shop Local Assistant to appear -->
+<script src="https://ai-local-buddy-rlooney.replit.app/static/widget.js" defer></script>
+
 <!-- Copy and paste this code where you want the chat widget to appear -->
 <div id="shop-local-assistant" style="
   position: fixed;
