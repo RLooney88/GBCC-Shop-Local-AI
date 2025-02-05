@@ -25,6 +25,7 @@ export function registerRoutes(app: Express): Server {
       if (error instanceof ZodError) {
         res.status(400).json({ error: "Invalid input data", details: error.errors });
       } else {
+        console.error("Error in /api/chat/start:", error);
         const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
         res.status(500).json({ error: errorMessage });
       }
@@ -47,33 +48,42 @@ export function registerRoutes(app: Express): Server {
 
       // Analyze query
       const analysis = await analyzeUserQuery(message);
+      if (!analysis) {
+        throw new Error("Failed to analyze query");
+      }
 
       // Search businesses
       const { data: businesses } = await axios.get(SHEETDB_URL);
+      if (!Array.isArray(businesses)) {
+        throw new Error("Invalid response from SheetDB");
+      }
+
       const matches = businesses.filter((business: any) => 
         analysis.keywords.some(keyword => 
-          business.name.toLowerCase().includes(keyword) ||
-          business.primaryServices.toLowerCase().includes(keyword) ||
+          business.name?.toLowerCase().includes(keyword.toLowerCase()) ||
+          business.primaryServices?.toLowerCase().includes(keyword.toLowerCase()) ||
           [business.category1, business.category2, business.category3].some(category => 
-            category?.toLowerCase().includes(keyword)
+            category?.toLowerCase().includes(keyword.toLowerCase())
           )
         )
       );
 
       let response: string;
+      let businessInfo: any;
+
       if (matches.length === 0) {
         response = "I couldn't find any businesses matching your request. Could you try describing what you're looking for differently?";
       } else if (matches.length === 1) {
         const business = matches[0];
-        const description = await generateBusinessDescription({
+        businessInfo = {
           name: business.name,
           primaryServices: business.primaryServices,
           categories: [business.category1, business.category2, business.category3].filter(Boolean),
           phone: business.phone,
           email: business.email,
           website: business.website
-        });
-        response = description;
+        };
+        response = await generateBusinessDescription(businessInfo);
       } else {
         response = await generateRefinementQuestion(matches.map(business => ({
           name: business.name,
@@ -91,10 +101,11 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ 
         message: response,
-        businesses: matches.length === 1 ? matches[0] : undefined,
+        businesses: businessInfo,
         multipleMatches: matches.length > 1
       });
     } catch (error) {
+      console.error("Error in /api/chat/message:", error);
       if (error instanceof ZodError) {
         res.status(400).json({ error: "Invalid input data", details: error.errors });
       } else {
