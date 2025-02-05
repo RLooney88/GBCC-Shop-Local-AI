@@ -6,6 +6,7 @@ import { insertUserSchema } from "@shared/schema";
 import { findMatchingBusinesses } from "./openai";
 import { z } from "zod";
 import { ZodError } from "zod";
+import { sendToGHL } from "./ghl";
 
 const SHEETDB_URL = "https://sheetdb.io/api/v1/aifpp2z9ktyie";
 
@@ -83,6 +84,12 @@ export function registerRoutes(app: Express): Server {
         throw new Error('Chat not found');
       }
 
+      // Get the user associated with this chat
+      const user = await storage.getUser(chat.userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
       // Add user message to chat history
       await storage.addMessage(chatId, {
         role: 'user',
@@ -94,19 +101,29 @@ export function registerRoutes(app: Express): Server {
       const businesses = await getBusinesses();
       console.log(`Retrieved ${businesses.length} businesses from directory`);
 
-      // Pass the entire chat history to OpenAI for context
       const { message: responseMessage, matches } = await findMatchingBusinesses(
-        message, 
+        message,
         businesses,
         Array.isArray(chat.messages) ? chat.messages : []
       );
-      console.log(`Found ${matches.length} matching businesses`);
 
       // Add assistant message to chat history
       await storage.addMessage(chatId, {
         role: 'assistant',
         content: responseMessage,
         timestamp: Date.now()
+      });
+
+      // Get updated chat with new messages
+      const updatedChat = await storage.getChat(chatId);
+      if (!updatedChat) {
+        throw new Error('Failed to get updated chat');
+      }
+
+      // Send conversation to GHL
+      await sendToGHL({
+        user,
+        messages: Array.isArray(updatedChat.messages) ? updatedChat.messages : []
       });
 
       res.json({
