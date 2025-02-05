@@ -1,13 +1,20 @@
-# Shop Local Assistant Widget
+<script src="https://rlooney88.github.io/shop-local-widget/widget.js"></script>
+```
 
-A lightweight, embeddable chat widget for the Shop Local Assistant.
+That's it! The chat widget will appear as a floating button in the bottom-right corner of your website.
 
-## Deployment to GitHub Pages
+## Features
+- Lightweight and responsive
+- No external dependencies
+- Clean animations
+- Mobile-friendly
+- Cross-origin compatible
 
-1. Create a new repository on GitHub (e.g., `shop-local-widget`)
+## Setup Instructions
+1. Create a new repository named `shop-local-widget` on GitHub
 2. Clone the repository:
    ```bash
-   git clone https://github.com/YOUR-USERNAME/shop-local-widget.git
+   git clone https://github.com/RLooney88/shop-local-widget.git
    ```
 3. Copy these files into the repository:
    - `index.html`
@@ -17,39 +24,3 @@ A lightweight, embeddable chat widget for the Shop Local Assistant.
    git add .
    git commit -m "Initial widget setup"
    git push origin main
-   ```
-5. Enable GitHub Pages:
-   - Go to repository Settings
-   - Navigate to Pages
-   - Select "main" branch and "/ (root)" folder
-   - Click Save
-
-Your widget will be available at: `https://YOUR-USERNAME.github.io/shop-local-widget/`
-
-## Usage
-
-Add this code to your website:
-
-```html
-<script>
-(function() {
-    const script = document.createElement('script');
-    script.src = 'https://YOUR-USERNAME.github.io/shop-local-widget/widget.js';
-    script.async = true;
-    document.body.appendChild(script);
-})();
-</script>
-```
-
-## Features
-- Lightweight and responsive
-- No external dependencies
-- Clean animations
-- Mobile-friendly
-- Cross-origin compatible
-
-## Customization
-To customize the appearance:
-- Primary color: Change `#00A7B7` to your preferred color in `widget.js`
-- Position: Modify `bottom` and `right` values in the CSS
-- Size: Adjust `width` and `height` values
