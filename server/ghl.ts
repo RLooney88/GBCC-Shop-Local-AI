@@ -41,6 +41,15 @@ export async function sendToGHL(data: {
   try {
     const summary = createConversationSummary(data.messages, data.user);
 
+    // Create a formatted transcript of the complete dialogue
+    const transcript = data.messages
+      .map(msg => {
+        const time = new Date(msg.timestamp).toLocaleString();
+        const role = msg.role === 'user' ? data.user.name : 'Assistant';
+        return `${role} (${time}): ${msg.content}`;
+      })
+      .join('\n\n');
+
     // Current timestamp for the conversation end
     const currentTime = new Date().toISOString();
 
@@ -53,6 +62,7 @@ export async function sendToGHL(data: {
       },
       conversation: {
         summary: summary,
+        transcript: `Full Conversation:\n\n${transcript}`,
         endedAt: currentTime,
         totalMessages: data.messages.length
       }
