@@ -22,24 +22,6 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve static files from the static directory with specific headers for widget.js
-app.use('/static', express.static(path.join(process.cwd(), 'static'), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    }
-  }
-}));
-
-// Create static directory if it doesn't exist
-const staticDir = path.join(process.cwd(), "static");
-if (!fs.existsSync(staticDir)) {
-  fs.mkdirSync(staticDir, { recursive: true });
-}
-
 // Create public directory if it doesn't exist
 const publicDir = path.join(process.cwd(), "client", "public");
 if (!fs.existsSync(publicDir)) {
@@ -60,7 +42,7 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api") || path.startsWith("/static")) {
+    if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
