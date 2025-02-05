@@ -59,7 +59,7 @@ export default function Home() {
           {!chatStarted ? (
             <div className="p-4">
               <p className="text-gray-600 mb-4">
-                Hi! I'm here to help you find the perfect local business for your needs.
+                Hi there! Introduce yourself to begin!
               </p>
               <UserForm onChatStart={(id) => {
                 setChatId(id);

@@ -7,6 +7,16 @@ interface BusinessCardProps {
 }
 
 export function BusinessCard({ business }: BusinessCardProps) {
+  // Function to get domain from URL
+  const getDomain = (url: string) => {
+    try {
+      const domain = new URL(url.startsWith('http') ? url : `https://${url}`);
+      return domain.hostname;
+    } catch {
+      return url;
+    }
+  };
+
   return (
     <Card className="bg-white shadow-md">
       <CardHeader>
@@ -34,12 +44,12 @@ export function BusinessCard({ business }: BusinessCardProps) {
           <div className="flex items-center space-x-2 text-gray-600">
             <Globe className="h-4 w-4" />
             <a 
-              href={business.website} 
+              href={business.website.startsWith('http') ? business.website : `https://${business.website}`}
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-[#00A7B7]"
             >
-              Visit Website
+              {getDomain(business.website)}
             </a>
           </div>
         )}
