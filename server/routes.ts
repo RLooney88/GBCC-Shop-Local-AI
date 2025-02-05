@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import axios from "axios";
-import { storage } from "./storage";
+import { storage, processInactiveChats } from "./storage";
 import { insertUserSchema } from "@shared/schema";
 import { findMatchingBusinesses } from "./openai";
 import { z } from "zod";
@@ -49,7 +49,9 @@ export function registerRoutes(app: Express): Server {
       const chat = await storage.createChat({
         userId: user.id,
         messages: [],
-        createdAt: new Date()
+        createdAt: new Date(),
+        lastActivityAt: new Date(),
+        sentToGHL: false
       });
 
       // Add initial assistant message
@@ -78,26 +80,22 @@ export function registerRoutes(app: Express): Server {
         message: z.string()
       }).parse(req.body);
 
-      // Get the chat history
       const chat = await storage.getChat(chatId);
       if (!chat) {
         throw new Error('Chat not found');
       }
 
-      // Get the user associated with this chat
       const user = await storage.getUser(chat.userId);
       if (!user) {
         throw new Error('User not found');
       }
 
-      // Add user message to chat history
       await storage.addMessage(chatId, {
         role: 'user',
         content: message,
         timestamp: Date.now()
       });
 
-      // Get businesses and find matches using OpenAI
       const businesses = await getBusinesses();
       console.log(`Retrieved ${businesses.length} businesses from directory`);
 
@@ -107,24 +105,21 @@ export function registerRoutes(app: Express): Server {
         Array.isArray(chat.messages) ? chat.messages : []
       );
 
-      // Add assistant message to chat history
       await storage.addMessage(chatId, {
         role: 'assistant',
         content: responseMessage,
         timestamp: Date.now()
       });
 
-      // Get updated chat with new messages
+      // If this is a closing message, send to GHL immediately
       const updatedChat = await storage.getChat(chatId);
-      if (!updatedChat) {
-        throw new Error('Failed to get updated chat');
+      if (updatedChat && !updatedChat.sentToGHL && (responseMessage.toLowerCase().includes('have a') || responseMessage.toLowerCase().includes('enjoy your'))) {
+        await sendToGHL({
+          user,
+          messages: Array.isArray(updatedChat.messages) ? updatedChat.messages : []
+        });
+        await storage.markChatSentToGHL(updatedChat.id);
       }
-
-      // Send conversation to GHL
-      await sendToGHL({
-        user,
-        messages: Array.isArray(updatedChat.messages) ? updatedChat.messages : []
-      });
 
       res.json({
         message: responseMessage,
@@ -143,6 +138,16 @@ export function registerRoutes(app: Express): Server {
       }
     }
   });
+
+  // Start the inactive chat processor
+  const INACTIVE_CHECK_INTERVAL = 60 * 1000; // Check every minute
+  setInterval(async () => {
+    try {
+      await processInactiveChats();
+    } catch (error) {
+      console.error("Error processing inactive chats:", error);
+    }
+  }, INACTIVE_CHECK_INTERVAL);
 
   const httpServer = createServer(app);
   return httpServer;
