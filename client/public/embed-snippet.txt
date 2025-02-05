@@ -1,4 +1,4 @@
-<!-- Add the Shop Local Assistant Chat Widget -->
+<!-- Copy and paste this code where you want the chat widget to appear -->
 <div id="shop-local-assistant">
   <iframe 
     src="https://ai-local-buddy-rlooney.replit.app" 
