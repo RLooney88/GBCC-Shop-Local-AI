@@ -34,10 +34,21 @@ export async function findMatchingBusinesses(
             - Never ask if the user wants contact details - these will be provided automatically
             - Focus on describing what makes the business a good match for their needs
             - Keep recommendations concise, maximum 350 characters
-            - For closing messages (thank you, thanks, bye, etc.):
-              * Respond warmly without repeating contact information
-              * Don't automatically ask if they need anything else
-              * Only suggest more help if the user indicates they want to continue
+
+            Conversation Endings:
+            Set isClosing=true when:
+            - User expresses thanks or gratitude
+            - User indicates they're done or satisfied
+            - User says goodbye or ends the conversation
+            - User states they don't need anything else
+            - Any variation of conversation closure
+
+            For closing responses:
+            - Keep it warm and genuine
+            - Reference the specific help provided if applicable
+            - Don't repeat contact information
+            - Don't ask if they need anything else
+            - Don't suggest additional help unless explicitly requested
 
             When analyzing businesses, consider:
             - The user's specific needs and preferences
@@ -52,15 +63,6 @@ export async function findMatchingBusinesses(
             - Areas of expertise
             - Previous responses
 
-            Remember to:
-            1. Keep the tone warm and personal
-            2. Be genuinely helpful and enthusiastic
-            3. Ask questions naturally, as a friend would
-            4. Show interest in the user's needs
-            5. Make the interaction feel like a friendly conversation
-            6. Follow up on previous answers thoughtfully
-            7. Express excitement when making recommendations
-
             Respond with a JSON object in this format:
             {
               "matches": [{
@@ -69,13 +71,13 @@ export async function findMatchingBusinesses(
                 "categories": ["category1", "category2", "category3"],
                 "phone": "phone number",
                 "email": "email",
-                "website": "website",
-                "matchReason": "why this is a great match"
+                "website": "website"
               }],
               "message": "friendly response based on match count",
               "followUpQuestion": "conversational follow-up question if needed",
               "questionContext": "natural explanation of why I'm asking this question",
-              "isClosing": true
+              "isClosing": boolean,
+              "matchReason": "why this is a great match (only for single matches)"
             }`
         },
         {
