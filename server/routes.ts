@@ -47,22 +47,28 @@ export function registerRoutes(app: Express): Server {
       });
 
       // Analyze query
+      console.log("Fetching analysis from OpenAI...");
       const analysis = await analyzeUserQuery(message);
-      console.log("Query analysis:", analysis); // Debug log
+      console.log("Query analysis:", analysis);
 
       if (!analysis) {
         throw new Error("Failed to analyze query");
       }
 
       // Search businesses
-      const { data: businesses } = await axios.get(SHEETDB_URL);
+      console.log("Fetching businesses from SheetDB...");
+      const response = await axios.get(SHEETDB_URL);
+      console.log("SheetDB raw response:", response.data);
+
+      const businesses = response.data;
       if (!Array.isArray(businesses)) {
-        throw new Error("Invalid response from SheetDB");
+        throw new Error("Invalid response from SheetDB: Expected an array");
       }
 
-      console.log("Available businesses:", businesses.length); // Debug log
+      console.log("Available businesses:", businesses.length);
+      console.log("First business sample:", businesses[0]);
 
-      // Enhanced matching logic
+      // Enhanced matching logic with better logging
       const matches = businesses.filter((business: any) => {
         const businessText = [
           business.name,
@@ -75,18 +81,35 @@ export function registerRoutes(app: Express): Server {
           .join(' ')
           .toLowerCase();
 
+        console.log(`Checking business: ${business.name}`);
+        console.log(`Business text to match against: ${businessText}`);
+
         // Match if any keyword is found in the combined business text
-        return analysis.keywords.some(keyword => businessText.includes(keyword.toLowerCase())) ||
-               analysis.categories.some(category => businessText.includes(category.toLowerCase()));
+        const keywordMatch = analysis.keywords.some(keyword => {
+          const matches = businessText.includes(keyword.toLowerCase());
+          if (matches) console.log(`Matched keyword: ${keyword}`);
+          return matches;
+        });
+
+        const categoryMatch = analysis.categories.some(category => {
+          const matches = businessText.includes(category.toLowerCase());
+          if (matches) console.log(`Matched category: ${category}`);
+          return matches;
+        });
+
+        return keywordMatch || categoryMatch;
       });
 
-      console.log("Matched businesses:", matches.length); // Debug log
+      console.log("Matched businesses:", matches.length);
+      if (matches.length > 0) {
+        console.log("First match:", matches[0]);
+      }
 
-      let response: string;
+      let responseMessage: string;
       let businessInfo: any;
 
       if (matches.length === 0) {
-        response = "I couldn't find any businesses matching your request. Could you try describing what you're looking for differently? For example, mention the type of service or industry you're interested in.";
+        responseMessage = "I couldn't find any businesses matching your request. Could you try describing what you're looking for differently? For example, mention the type of service or industry you're interested in.";
       } else if (matches.length === 1) {
         const business = matches[0];
         businessInfo = {
@@ -97,9 +120,9 @@ export function registerRoutes(app: Express): Server {
           email: business.email,
           website: business.website
         };
-        response = await generateBusinessDescription(businessInfo);
+        responseMessage = await generateBusinessDescription(businessInfo);
       } else {
-        response = await generateRefinementQuestion(matches.map(business => ({
+        responseMessage = await generateRefinementQuestion(matches.map(business => ({
           name: business.name,
           primaryServices: business.primaryServices,
           categories: [business.category1, business.category2, business.category3].filter(Boolean)
@@ -109,12 +132,12 @@ export function registerRoutes(app: Express): Server {
       // Add assistant message
       await storage.addMessage(chatId, {
         role: 'assistant',
-        content: response,
+        content: responseMessage,
         timestamp: Date.now()
       });
 
       res.json({ 
-        message: response,
+        message: responseMessage,
         businesses: businessInfo,
         multipleMatches: matches.length > 1
       });
