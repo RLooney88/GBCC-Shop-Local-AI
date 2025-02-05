@@ -59,19 +59,31 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
       });
       return res.json();
     },
+    onMutate: async (message) => {
+      // Optimistically add user message immediately
+      setMessages(prev => [...prev, { 
+        role: 'user', 
+        content: message, 
+        timestamp: Date.now() 
+      }]);
+      setInput("");
+      setIsTyping(true);
+    },
     onSuccess: (data) => {
-      // Add the user message
+      setIsTyping(false);
+      // Add assistant's response
       setMessages(prev => [
         ...prev,
-        { role: 'user', content: input, timestamp: Date.now() },
-        { role: 'assistant', content: data.message, timestamp: Date.now() }
+        { 
+          role: 'assistant', 
+          content: data.message, 
+          timestamp: Date.now() 
+        }
       ]);
-      setInput("");
 
       // Only show business info if it's a new business match and not a closing message
       if (data.businesses && !data.isClosing) {
         setSelectedBusiness(data.businesses);
-        // Add business info as a system message
         setMessages(prev => [
           ...prev,
           {
@@ -91,6 +103,9 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
       }
     },
     onError: (error) => {
+      // Remove the optimistically added message on error
+      setMessages(prev => prev.slice(0, -1));
+      setIsTyping(false);
       toast({
         variant: "destructive",
         title: "Error",
@@ -120,7 +135,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
               <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce delay-200" />
             </div>
           )}
-          <div ref={messagesEndRef} /> {/* Add this invisible element */}
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
