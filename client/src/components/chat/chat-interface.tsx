@@ -46,9 +46,10 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
     }
   }, [initialChat]);
 
+  // Scroll to bottom whenever messages change or typing status changes
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const sendMessage = useMutation({
     mutationFn: async (message: string) => {
