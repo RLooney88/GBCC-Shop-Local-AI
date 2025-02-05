@@ -7,10 +7,15 @@ import { findMatchingBusinesses } from "./openai";
 import { z } from "zod";
 import { ZodError } from "zod";
 import { sendToGHL } from "./ghl";
+import path from "path";
+import express from "express"; // Added import for express
 
 const SHEETDB_URL = "https://sheetdb.io/api/v1/aifpp2z9ktyie";
 
 export function registerRoutes(app: Express): Server {
+  // Serve static files from the public directory
+  app.use(express.static(path.join(process.cwd(), "client", "public")));
+
   // Business data cache with expiration
   let businessCache: { data: any[]; timestamp: number } | null = null;
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
