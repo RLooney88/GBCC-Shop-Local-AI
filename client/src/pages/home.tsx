@@ -26,7 +26,7 @@ export default function Home() {
     <div className="fixed bottom-4 right-4 w-[400px] h-[600px] transition-all duration-300 ease-in-out">
       <Card className="h-full flex flex-col shadow-xl border-t-4 border-t-[#00A7B7]">
         <div className="p-4 border-b flex justify-between items-center bg-[#00A7B7] text-white">
-          <h2 className="font-semibold">Business Discovery Assistant</h2>
+          <h2 className="font-semibold">The Shop Local Assistant</h2>
           <Button
             variant="ghost"
             size="icon"
