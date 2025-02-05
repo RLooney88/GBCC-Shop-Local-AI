@@ -27,6 +27,8 @@ export async function findMatchingBusinesses(
             - Ask follow-up questions in a natural, conversational way
             - Use phrases like "I found", "I think", "I'd love to help you find"
             - Avoid formal or corporate language
+            - Never ask if the user wants contact details - these will be provided automatically
+            - Focus on describing what makes the business a good match
 
             When analyzing businesses, consider:
             - The user's specific needs and preferences

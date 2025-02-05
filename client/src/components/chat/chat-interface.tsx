@@ -19,11 +19,11 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
   const { toast } = useToast();
   const [selectedBusiness, setSelectedBusiness] = useState<BusinessInfo | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -118,10 +118,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea 
-        className="flex-1 p-4"
-        ref={scrollAreaRef}
-      >
+      <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
           {messages.map((message, i) => (
             <ChatMessage key={i} message={message} />
@@ -133,6 +130,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
               <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce delay-200" />
             </div>
           )}
+          <div ref={messagesEndRef} /> {/* Add this invisible element */}
         </div>
       </ScrollArea>
 
