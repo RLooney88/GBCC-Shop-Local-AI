@@ -27,14 +27,8 @@ export function UserForm({ onChatStart }: UserFormProps) {
       const res = await apiRequest("POST", "/api/chat/start", data);
       return res.json();
     },
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       onChatStart(data.chatId);
-
-      // Add initial message to the chat after successful registration
-      await apiRequest("POST", "/api/chat/message", {
-        chatId: data.chatId,
-        message: "What kind of business/organization are you looking for?"
-      });
     },
     onError: (error) => {
       toast({
