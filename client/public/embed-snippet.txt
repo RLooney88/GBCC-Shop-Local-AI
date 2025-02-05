@@ -1,0 +1,13 @@
+<!-- Add the Shop Local Assistant Chat Widget -->
+<div id="shop-local-assistant"></div>
+<script>
+  (function(w,d,s,o,f,js,fjs){
+    w['ShopLocalWidget']=o;w[o]=w[o]||function(){
+      (w[o].q=w[o].q||[]).push(arguments)};
+    js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
+    js.id='shop-local-assistant-script';
+    js.src='https://chamber.prmthe.us/widget.js';
+    js.async=1;
+    fjs.parentNode.insertBefore(js,fjs);
+  }(window,document,'script','shopLocal'));
+</script>
