@@ -14,17 +14,18 @@ export async function analyzeUserQuery(query: string): Promise<{
       messages: [
         {
           role: "system",
-          content: `You are a business category analyzer. Extract relevant keywords and business categories from user queries.
-            Consider synonyms, related terms, and industry-specific terminology.
-            For example, if someone asks for a "mechanic", include terms like "auto repair", "car service", etc.
+          content: `You are a business search assistant. Analyze user queries to extract search terms that will help find relevant businesses.
+
+            Important guidelines:
+            - Focus on identifying business needs and requirements, not just keywords
+            - Consider various ways a user might describe the same business need
+            - Extract both specific terms and general business categories
 
             Always respond with a JSON object in this exact format:
             {
-              "keywords": ["keyword1", "keyword2", "synonym1", "synonym2"],
-              "categories": ["category1", "category2", "related_category"]
-            }
-
-            Include both specific terms from the query and related business terminology.`
+              "keywords": ["extracted terms that describe what user wants"],
+              "categories": ["business categories that might fulfill this need"]
+            }`
         },
         {
           role: "user",
@@ -54,6 +55,48 @@ export async function analyzeUserQuery(query: string): Promise<{
   }
 }
 
+export async function generateRefinementQuestion(businesses: BusinessInfo[]): Promise<string> {
+  try {
+    // Group businesses by primary characteristic
+    const characteristicGroups = businesses.reduce((groups: any, business) => {
+      const key = business.primaryServices.split(',')[0].trim().toLowerCase();
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(business);
+      return groups;
+    }, {});
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are a business directory assistant helping users find the right business.
+            Given grouped business information, generate a clear question to help narrow down choices.
+            Focus on the key differentiators between groups.
+            Keep questions simple and user-friendly.`
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            groups: characteristicGroups,
+            totalBusinesses: businesses.length
+          })
+        }
+      ]
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("Failed to get response from OpenAI");
+    }
+
+    return content;
+  } catch (error) {
+    console.error("Error in generateRefinementQuestion:", error);
+    throw error;
+  }
+}
+
 export async function generateBusinessDescription(business: BusinessInfo): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
@@ -61,7 +104,8 @@ export async function generateBusinessDescription(business: BusinessInfo): Promi
       messages: [
         {
           role: "system",
-          content: "Generate a brief, friendly description (<150 chars) of a business based on its details. Highlight key services and unique features."
+          content: `Create a brief, engaging description (<150 chars) highlighting this business's key value proposition and unique services.
+            Focus on what makes them special and how they can help potential customers.`
         },
         {
           role: "user",
@@ -78,36 +122,6 @@ export async function generateBusinessDescription(business: BusinessInfo): Promi
     return content;
   } catch (error) {
     console.error("Error in generateBusinessDescription:", error);
-    throw error;
-  }
-}
-
-export async function generateRefinementQuestion(businesses: BusinessInfo[]): Promise<string> {
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `Generate a concise question to help narrow down business choices. 
-            The question should focus on the key differences between the businesses, 
-            such as specialties, services, or business types.`
-        },
-        {
-          role: "user",
-          content: JSON.stringify(businesses)
-        }
-      ]
-    });
-
-    const content = response.choices[0].message.content;
-    if (!content) {
-      throw new Error("Failed to get response from OpenAI");
-    }
-
-    return content;
-  } catch (error) {
-    console.error("Error in generateRefinementQuestion:", error);
     throw error;
   }
 }

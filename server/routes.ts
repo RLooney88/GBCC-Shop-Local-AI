@@ -9,7 +9,40 @@ import { ZodError } from "zod";
 
 const SHEETDB_URL = "https://sheetdb.io/api/v1/aifpp2z9ktyie";
 
+// Utility function for business text normalization
+function normalizeText(text: string): string {
+  return text.toLowerCase().trim();
+}
+
+// Utility function to create searchable business text
+function createSearchableBusinessText(business: any): string {
+  const fields = [
+    business['Company Name'],
+    business['Primary Services'],
+    business['Category 1'],
+    business['Category 2'],
+    business['Category 3'],
+    business['Company Overview']
+  ];
+  return fields.filter(Boolean).join(' ').toLowerCase();
+}
+
 export function registerRoutes(app: Express): Server {
+  // Business data cache with expiration
+  let businessCache: { data: any[]; timestamp: number } | null = null;
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  async function getBusinesses() {
+    if (businessCache && Date.now() - businessCache.timestamp < CACHE_DURATION) {
+      return businessCache.data;
+    }
+
+    const response = await axios.get(SHEETDB_URL);
+    const businesses = response.data;
+    businessCache = { data: businesses, timestamp: Date.now() };
+    return businesses;
+  }
+
   app.post("/api/chat/start", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -22,10 +55,10 @@ export function registerRoutes(app: Express): Server {
 
       res.json({ chatId: chat.id, userId: user.id });
     } catch (error) {
+      console.error("Error in chat start:", error);
       if (error instanceof ZodError) {
         res.status(400).json({ error: "Invalid input data", details: error.errors });
       } else {
-        console.error("Error in /api/chat/start:", error);
         const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
         res.status(500).json({ error: errorMessage });
       }
@@ -39,105 +72,76 @@ export function registerRoutes(app: Express): Server {
         message: z.string()
       }).parse(req.body);
 
-      // Add user message
+      // Add user message to chat history
       await storage.addMessage(chatId, {
         role: 'user',
         content: message,
         timestamp: Date.now()
       });
 
-      // Analyze query
-      console.log("Fetching analysis from OpenAI...");
+      // Step 1: Analyze user query
       const analysis = await analyzeUserQuery(message);
-      console.log("Query analysis:", analysis);
+      console.log("Query analysis:", { keywords: analysis.keywords, categories: analysis.categories });
 
-      if (!analysis) {
-        throw new Error("Failed to analyze query");
-      }
+      // Step 2: Get and process businesses
+      const businesses = await getBusinesses();
+      console.log(`Processing ${businesses.length} businesses`);
 
-      // Search businesses
-      console.log("Fetching businesses from SheetDB...");
-      const response = await axios.get(SHEETDB_URL);
-      console.log("SheetDB raw response:", response.data);
+      // Step 3: Score and rank matches
+      const scoredMatches = businesses.map(business => {
+        const searchableText = createSearchableBusinessText(business);
+        let score = 0;
 
-      const businesses = response.data;
-      if (!Array.isArray(businesses)) {
-        throw new Error("Invalid response from SheetDB: Expected an array");
-      }
-
-      console.log("Available businesses:", businesses.length);
-      console.log("First business sample:", businesses[0]);
-
-      // Enhanced matching logic with better logging
-      const matches = businesses.filter((business: any) => {
-        const businessText = [
-          business['Company Name'],
-          business['Primary Services'],
-          business['Category 1'],
-          business['Category 2'],
-          business['Category 3']
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-
-        console.log(`Checking business: ${business['Company Name']}`);
-        console.log(`Business text to match against: ${businessText}`);
-
-        // Match if any keyword is found in the combined business text
-        const keywordMatch = analysis.keywords.some(keyword => {
-          const matches = businessText.includes(keyword.toLowerCase());
-          if (matches) console.log(`Matched keyword: ${keyword}`);
-          return matches;
+        // Score based on keywords
+        analysis.keywords.forEach(keyword => {
+          if (searchableText.includes(normalizeText(keyword))) score += 2;
         });
 
-        const categoryMatch = analysis.categories.some(category => {
-          const matches = businessText.includes(category.toLowerCase());
-          if (matches) console.log(`Matched category: ${category}`);
-          return matches;
+        // Score based on categories
+        analysis.categories.forEach(category => {
+          if (searchableText.includes(normalizeText(category))) score += 1;
         });
 
-        return keywordMatch || categoryMatch;
-      });
+        return { business, score };
+      }).filter(match => match.score > 0)
+        .sort((a, b) => b.score - a.score);
 
-      console.log("Matched businesses:", matches.length);
-      if (matches.length > 0) {
-        console.log("First match:", matches[0]);
-      }
+      console.log(`Found ${scoredMatches.length} potential matches`);
 
+      // Step 4: Process matches and generate response
       let responseMessage: string;
-      let businessInfo: any;
+      let businessInfo = null;
 
-      if (matches.length === 0) {
-        responseMessage = "I couldn't find any businesses matching your request. Could you try describing what you're looking for differently? For example, mention the type of service or industry you're interested in.";
-      } else if (matches.length === 1) {
-        const business = matches[0];
+      if (scoredMatches.length === 0) {
+        responseMessage = "I couldn't find any businesses matching your request. Could you try describing what you're looking for differently? For example, what type of service or help do you need?";
+      } else if (scoredMatches.length === 1) {
+        const match = scoredMatches[0].business;
         businessInfo = {
-          name: business['Company Name'],
-          primaryServices: business['Primary Services'],
-          categories: [
-            business['Category 1'],
-            business['Category 2'],
-            business['Category 3']
-          ].filter(Boolean),
-          phone: business['Phone Number'],
-          email: business['Email'],
-          website: business['Website']
+          name: match['Company Name'],
+          primaryServices: match['Primary Services'],
+          categories: [match['Category 1'], match['Category 2'], match['Category 3']].filter(Boolean),
+          phone: match['Phone Number'],
+          email: match['Email'],
+          website: match['Website']
         };
         responseMessage = await generateBusinessDescription(businessInfo);
       } else {
-        responseMessage = await generateRefinementQuestion(matches.map(business => ({
-          name: business['Company Name'],
-          primaryServices: business['Primary Services'],
+        // Group similar businesses for better refinement questions
+        const topMatches = scoredMatches.slice(0, 5).map(match => ({
+          name: match.business['Company Name'],
+          primaryServices: match.business['Primary Services'],
           categories: [
-            business['Category 1'],
-            business['Category 2'],
-            business['Category 3']
+            match.business['Category 1'],
+            match.business['Category 2'],
+            match.business['Category 3']
           ].filter(Boolean)
-        })));
+        }));
+
+        console.log("Top matches for refinement:", topMatches);
+        responseMessage = await generateRefinementQuestion(topMatches);
       }
 
-      // Add assistant message
+      // Add assistant message to chat history
       await storage.addMessage(chatId, {
         role: 'assistant',
         content: responseMessage,
@@ -147,10 +151,12 @@ export function registerRoutes(app: Express): Server {
       res.json({
         message: responseMessage,
         businesses: businessInfo,
-        multipleMatches: matches.length > 1
+        multipleMatches: scoredMatches.length > 1,
+        matchCount: scoredMatches.length
       });
+
     } catch (error) {
-      console.error("Error in /api/chat/message:", error);
+      console.error("Error processing message:", error);
       if (error instanceof ZodError) {
         res.status(400).json({ error: "Invalid input data", details: error.errors });
       } else {
