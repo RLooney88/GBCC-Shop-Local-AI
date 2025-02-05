@@ -99,7 +99,7 @@ export function registerRoutes(app: Express): Server {
       const businesses = await getBusinesses();
       console.log(`Retrieved ${businesses.length} businesses from directory`);
 
-      const { message: responseMessage, matches } = await findMatchingBusinesses(
+      const { message: responseMessage, matches, isClosing } = await findMatchingBusinesses(
         message,
         businesses,
         Array.isArray(chat.messages) ? chat.messages : []
@@ -112,20 +112,23 @@ export function registerRoutes(app: Express): Server {
       });
 
       // If this is a closing message, send to GHL immediately
-      const updatedChat = await storage.getChat(chatId);
-      if (updatedChat && !updatedChat.sentToGHL && (responseMessage.toLowerCase().includes('have a') || responseMessage.toLowerCase().includes('enjoy your'))) {
-        await sendToGHL({
-          user,
-          messages: Array.isArray(updatedChat.messages) ? updatedChat.messages : []
-        });
-        await storage.markChatSentToGHL(updatedChat.id);
+      if (isClosing) {
+        const updatedChat = await storage.getChat(chatId);
+        if (updatedChat && !updatedChat.sentToGHL) {
+          await sendToGHL({
+            user,
+            messages: Array.isArray(updatedChat.messages) ? updatedChat.messages : []
+          });
+          await storage.markChatSentToGHL(updatedChat.id);
+        }
       }
 
       res.json({
         message: responseMessage,
         businesses: matches.length === 1 ? matches[0] : null,
         multipleMatches: matches.length > 1,
-        matchCount: matches.length
+        matchCount: matches.length,
+        isClosing
       });
 
     } catch (error) {

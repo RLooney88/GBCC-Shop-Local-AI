@@ -11,6 +11,7 @@ export async function findMatchingBusinesses(
 ): Promise<{
   message: string;
   matches: BusinessInfo[];
+  isClosing: boolean;
 }> {
   try {
     const response = await openai.chat.completions.create({
@@ -37,11 +38,13 @@ export async function findMatchingBusinesses(
 
             Conversation Endings:
             Set isClosing=true when:
-            - User expresses thanks or gratitude
-            - User indicates they're done or satisfied
-            - User says goodbye or ends the conversation
-            - User states they don't need anything else
-            - Any variation of conversation closure
+            - User expresses thanks or gratitude (e.g., "thanks", "thank you")
+            - User indicates they're done or satisfied (e.g., "that's all", "that's it")
+            - User says goodbye or ends the conversation (e.g., "bye", "goodbye")
+            - User states they don't need anything else (e.g., "no", "nothing else")
+            - Any variation of conversation closure (e.g., "I'm good", "that's enough")
+            - User responds negatively to follow-up questions
+            - User indicates completion (e.g., "that works", "perfect")
 
             For closing responses:
             - Keep it warm and genuine
@@ -49,6 +52,7 @@ export async function findMatchingBusinesses(
             - Don't repeat contact information
             - Don't ask if they need anything else
             - Don't suggest additional help unless explicitly requested
+            - End with a friendly closing (e.g., "Have a great day!", "Enjoy!")
 
             When analyzing businesses, consider:
             - The user's specific needs and preferences
@@ -111,7 +115,8 @@ export async function findMatchingBusinesses(
         phone: match.phone,
         email: match.email,
         website: match.website
-      }))
+      })),
+      isClosing: result.isClosing
     };
   } catch (error) {
     console.error("Error in findMatchingBusinesses:", error);
