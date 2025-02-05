@@ -1,0 +1,104 @@
+This project is an AI-powered chatbot designed to help users find and connect with local small businesses. The chatbot leverages OpenAI for natural language understanding and business matching, while Replit handles data processing, business filtering, and conversation logic. Replit will reference Sheetdb.io for spreadsheet information. The system dynamically narrows down search results and provides tailored recommendations based on user queries. 
+Users simply describe the type of business they are looking for, and the chatbot intelligently analyzes the request, matches it against a business directory, and presents the most relevant option(s). If multiple businesses match, the chatbot asks follow-up questions to refine the recommendation until the best fit is found.
+
+This chatbot will live on the chambers website. Here is the spreadsheet api: https://sheetdb.io/api/v1/aifpp2z9ktyie
+
+Chamber primary color: #00A7B7
+Key Roles:
+OpenAI → Understands user queries, extracts keywords, generates responses/questions, refines selections, and provides descriptions.
+Replit → Handles spreadsheet analysis, counts business matches, determines workflow logic, fetches contact details, and manages interactions with OpenAI.
+
+Step 1: User Input Collection (Replit)
+User fills out a form that includes:
+Name
+Email address
+Replit initiates a conversation with OpenAI:
+Prompt to OpenAI:
+"The user is looking for a local business. Extract relevant keywords and business categories from the following query."
+User Query: "I’m looking for a body shop."
+
+Step 2: Understanding the User Query (OpenAI → Replit)
+OpenAI processes the query and returns:
+Extracted Keywords (e.g., "body shop", "collision repair")
+Business Categories (e.g., "Auto Repair", "Collision Repair", "Car Services")
+Replit receives OpenAI's extracted keywords and categories.
+
+Step 3: Business Matching in the Spreadsheet (Replit)
+Replit searches the spreadsheet for businesses that match the extracted keywords/categories across these fields:
+Company Name
+Primary Services
+Category 1
+Category 2
+Category 3
+Replit counts how many businesses match the query and determines next steps based on the match count.
+
+Step 4: Forking Logic Based on Match Count
+Case 1: No Matches Found (Replit → OpenAI → User)
+Replit detects no matches and sends a new prompt to OpenAI:
+"No businesses match the user’s request. Generate a response informing the user that there are no good recommendations at this time."
+OpenAI generates a response:
+"It doesn't look like I have a good recommendation for that right now, but new businesses join the chamber every day. Is there something else I can help you with?"
+Replit delivers the response to the user.
+
+Case 2: Exactly One Business Found (Replit → OpenAI → User)
+Replit detects one match and sends this prompt to OpenAI:
+_"One business matches the user’s request. Generate a brief description (<150 characters) based on the following details:
+Company Name: [Business Name]
+Primary Services: [Primary Services]
+Category 1: [Category 1]
+Category 2: [Category 2]
+Category 3: [Category 3]"_
+OpenAI returns a short business description.
+Example:
+"I found a great match! [Business Name] specializes in [Primary Services]."
+Replit sends this response to the user:
+"I found a great match! [Business Name] specializes in [Primary Services]. Would you like their contact information?"
+User response is captured and sent to OpenAI for intent analysis:
+If Yes, Replit retrieves business contact info from the spreadsheet and sends:
+"Here’s how you can get in touch with [Business Name]:
+📞 Phone: [Retrieved]
+📧 Email: [Retrieved]
+💻 Website: [Retrieved]
+Would you like any other recommendations, or is there anything else I can help with?"
+If No, Replit offers to refine the search:
+"Would you like me to look for a different type of business?"
+
+Case 3: Multiple Businesses Found (Replit → OpenAI → User)
+Replit detects multiple matches and sends this prompt to OpenAI:
+_"Multiple businesses match the user’s request. Generate a question to narrow down the selection.
+Example businesses:
+[Business Name 1]: [Primary Services]
+[Business Name 2]: [Primary Services]
+[Business Name 3]: [Primary Services]
+Keep the question concise and user-friendly."_
+OpenAI generates a question to refine the choices.
+Example:
+"Do you need a shop that specializes in collision repair or general auto maintenance?"
+Replit sends this question to the user.
+User responds, and Replit forwards the answer to OpenAI for further refinement.
+Process repeats until OpenAI identifies the best single match.
+Once a single business is determined, Replit follows the same logic as Case 2:
+Sends OpenAI a request for a brief description.
+Asks the user if they want the contact information.
+Retrieves and delivers the contact details if requested.
+
+Step 5: Handling Contact Information Requests
+User response about contact details is sent to OpenAI to determine intent.
+If OpenAI confirms the user wants contact details:
+Replit pulls the contact info from the spreadsheet.
+Replit sends the formatted response:
+"Here’s how you can get in touch with [Business Name]:
+📞 Phone: [Retrieved]
+📧 Email: [Retrieved]
+💻 Website: [Retrieved]
+Would you like any other recommendations, or is there anything else I can help with?"
+
+Step 6: Sending Data to GoHighLevel
+After conversation completion, Replit sends a conversation summary to GoHighLevel, including:
+User's name & email
+Selected business contact details
+Summary of the conversation
+Any additional user preferences captured
+
+
+
