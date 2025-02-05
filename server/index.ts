@@ -6,6 +6,20 @@ import fs from "fs";
 
 const app = express();
 
+// Dedicated route for widget.js with proper content type
+app.get('/widget.js', (req, res) => {
+  const widgetPath = path.join(process.cwd(), 'client', 'public', 'widget.js');
+  if (fs.existsSync(widgetPath)) {
+    const content = fs.readFileSync(widgetPath, 'utf8');
+    res.type('application/javascript');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(content);
+  } else {
+    res.status(404).send('Widget not found');
+  }
+});
+
 // Enable CORS before any other middleware
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -24,32 +38,13 @@ if (!fs.existsSync(staticDir)) {
   fs.mkdirSync(staticDir, { recursive: true });
 }
 
-// Copy widget.js to static directory
-const widgetSrc = path.join(process.cwd(), "client", "public", "widget.js");
-const widgetDest = path.join(staticDir, "widget.js");
-fs.copyFileSync(widgetSrc, widgetDest);
+// Create public directory if it doesn't exist
+const publicDir = path.join(process.cwd(), "client", "public");
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
+}
 
-// Serve static files with proper MIME types
-app.use('/static', express.static(staticDir, {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    }
-  }
-}));
-
-// Serve other static files from client/public
-app.use(express.static(path.join(process.cwd(), "client", "public"), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    }
-  }
-}));
-
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -63,7 +58,7 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
+    if (path.startsWith("/api") || path === "/widget.js") {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
