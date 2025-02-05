@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "./chat-message";
-import { BusinessCard } from "./business-card";
 import { useToast } from "@/hooks/use-toast";
 import { Send } from "lucide-react";
 import type { ChatMessage as ChatMessageType, BusinessInfo } from "@shared/schema";
@@ -67,6 +66,20 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
       setInput("");
       if (data.businesses) {
         setSelectedBusiness(data.businesses);
+        // Add business info as a system message
+        if (data.businesses) {
+          setMessages(prev => [
+            ...prev,
+            {
+              role: 'assistant',
+              content: `Here's the contact information for ${data.businesses.name}:
+📞 ${data.businesses.phone || 'Phone not available'}
+📧 ${data.businesses.email || 'Email not available'}
+🌐 ${data.businesses.website ? `[${new URL(data.businesses.website.startsWith('http') ? data.businesses.website : `https://${data.businesses.website}`).hostname}](${data.businesses.website.startsWith('http') ? data.businesses.website : `https://${data.businesses.website}`})` : 'Website not available'}`,
+              timestamp: Date.now()
+            }
+          ]);
+        }
       }
     },
     onError: (error) => {
@@ -104,12 +117,6 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
           )}
         </div>
       </ScrollArea>
-
-      {selectedBusiness && (
-        <div className="px-4 py-2 border-t">
-          <BusinessCard business={selectedBusiness} />
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="p-4 border-t">
         <div className="flex space-x-2">
