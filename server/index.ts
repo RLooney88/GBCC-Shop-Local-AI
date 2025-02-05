@@ -28,14 +28,11 @@ if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }
 
-// Serve static files from the public directory
+// Serve static files from the public directory BEFORE all other middleware
 app.use(express.static(publicDir, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
     }
   }
 }));
@@ -46,6 +43,11 @@ app.use((req, res, next) => {
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
+  // Add detailed logging for static files
+  if (path.endsWith('.js')) {
+    log(`Serving static file: ${path}`);
+  }
+
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
@@ -54,7 +56,7 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
+    if (path.startsWith("/api") || path.endsWith('.js')) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
@@ -82,7 +84,7 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Set up Vite or serve static files after all other routes are configured
+  // Set up Vite or serve static files after API routes but before the catch-all
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
