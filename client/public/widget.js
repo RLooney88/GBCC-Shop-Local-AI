@@ -6,45 +6,52 @@
       position: fixed;
       bottom: 20px;
       right: 20px;
-      z-index: 9999;
+      z-index: 2147483647;
+      width: 400px;
+      height: 600px;
+      max-height: 90vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
     #shop-local-assistant iframe {
       border: none;
-      width: 400px;
-      height: 600px;
-      max-height: 90vh;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      opacity: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: white;
+      box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
       transition: opacity 0.3s ease;
-    }
-
-    #shop-local-assistant iframe.loaded {
-      opacity: 1;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
     }
 
     @media (max-width: 480px) {
+      #shop-local-assistant {
+        width: 100% !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        bottom: 0 !important;
+        right: 0 !important;
+        margin: 0 !important;
+      }
+
       #shop-local-assistant iframe {
-        width: 100vw;
-        height: 100vh;
-        max-height: 100vh;
-        position: fixed;
-        bottom: 0;
-        right: 0;
-        border-radius: 0;
+        border-radius: 0 !important;
       }
     }
   `;
   document.head.appendChild(styles);
 
+  // Create container div
+  const container = document.createElement('div');
+  container.id = 'shop-local-assistant';
+
   // Create iframe
   const iframe = document.createElement('iframe');
-
-  // Set iframe attributes
-  iframe.style.display = 'none';
-  iframe.setAttribute('title', 'Shop Local Assistant Chat');
-  iframe.setAttribute('aria-label', 'Shop Local Assistant Chat Interface');
+  iframe.src = "https://ai-local-buddy-rlooney.replit.app";
+  iframe.title = 'Shop Local Assistant Chat';
+  iframe.setAttribute('allow', 'microphone');
 
   // Handle iframe loading
   iframe.onload = function() {
@@ -57,20 +64,16 @@
   // Error handling
   iframe.onerror = function() {
     console.error('Failed to load Shop Local Assistant');
-    const container = document.getElementById('shop-local-assistant');
     if (container) {
       container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Unable to load chat assistant</div>';
     }
   };
 
-  // Set iframe source to the chat application
-  iframe.src = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '') + '/';
+  // Add iframe to container
+  container.appendChild(iframe);
 
-  // Add iframe to the container
-  const container = document.getElementById('shop-local-assistant');
-  if (container) {
-    container.appendChild(iframe);
-  }
+  // Add container to body
+  document.body.appendChild(container);
 
   // Add window message listener for potential future cross-origin communication
   window.addEventListener('message', function(event) {
