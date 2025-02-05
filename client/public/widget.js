@@ -117,13 +117,57 @@
       background: #008A99;
     }
 
+    .shop-local-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .shop-local-message {
+      padding: 12px;
+      border-radius: 8px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+
+    .shop-local-message.user {
+      background: #00A7B7;
+      color: white;
+      align-self: flex-end;
+    }
+
+    .shop-local-message.assistant {
+      background: #f0f0f0;
+      color: #333;
+      align-self: flex-start;
+    }
+
+    .shop-local-input-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      background: white;
+      border-top: 1px solid #ddd;
+      display: flex;
+      gap: 8px;
+    }
+
     @media (max-width: 480px) {
       .shop-local-chat {
         width: 100%;
         height: 100vh;
+        max-height: 100vh;
         bottom: 0;
         right: 0;
         border-radius: 0;
+      }
+
+      .shop-local-button {
+        bottom: 20px;
+        right: 20px;
       }
     }
   `;
@@ -145,7 +189,7 @@
   chat.className = 'shop-local-chat';
   chat.innerHTML = `
     <div class="shop-local-header">
-      <h2>The Shop Local Assistant</h2>
+      <h2>Shop Local Assistant</h2>
       <button class="shop-local-close">✕</button>
     </div>
     <div class="shop-local-content">
@@ -161,6 +205,10 @@
   widget.appendChild(button);
   widget.appendChild(chat);
   document.body.appendChild(widget);
+
+  // Chat state
+  let chatId = null;
+  let messages = [];
 
   // Add event listeners
   button.addEventListener('click', () => {
@@ -179,7 +227,7 @@
     const email = form.querySelector('input[type="email"]').value;
 
     try {
-      const response = await fetch('https://ai-local-buddy-rlooney.replit.app/api/chat/start', {
+      const response = await fetch('/api/chat/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -192,14 +240,77 @@
       }
 
       const data = await response.json();
-      // Initialize chat interface here with data.chatId
-      chat.querySelector('.shop-local-content').innerHTML = `
-        <div style="text-align: center;">
-          <p>Welcome ${name}!</p>
-          <p>Chat ID: ${data.chatId}</p>
-          <!-- Add chat interface here -->
+      chatId = data.chatId;
+
+      // Initialize chat interface
+      const content = chat.querySelector('.shop-local-content');
+      content.innerHTML = `
+        <div class="shop-local-messages"></div>
+        <div class="shop-local-input-container">
+          <input type="text" class="shop-local-input" placeholder="Type your message...">
+          <button class="shop-local-button-submit" style="padding: 8px 16px;">Send</button>
         </div>
       `;
+
+      // Add message event listener
+      const messageInput = content.querySelector('.shop-local-input');
+      const sendButton = content.querySelector('.shop-local-button-submit');
+
+      async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        messageInput.value = '';
+        addMessage('user', message);
+
+        try {
+          const response = await fetch('/api/chat/message', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ chatId, message })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to send message');
+          }
+
+          const data = await response.json();
+          addMessage('assistant', data.message);
+
+          // If business info is available, display it
+          if (data.businesses && !data.isClosing) {
+            const business = data.businesses;
+            addMessage('assistant', `Here's a local business that might help:\n${business.name}\n${business.primaryServices}`);
+          }
+        } catch (error) {
+          console.error('Error sending message:', error);
+          addMessage('assistant', 'Sorry, there was an error processing your message. Please try again.');
+        }
+      }
+
+      function addMessage(role, content) {
+        const messagesContainer = chat.querySelector('.shop-local-messages');
+        const messageElement = document.createElement('div');
+        messageElement.className = `shop-local-message ${role}`;
+        messageElement.textContent = content;
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        messages.push({ role, content });
+      }
+
+      sendButton.addEventListener('click', sendMessage);
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Add initial message
+      addMessage('assistant', 'Hi! What kind of business are you looking for?');
+
     } catch (error) {
       console.error('Error starting chat:', error);
       alert('Failed to start chat. Please try again.');

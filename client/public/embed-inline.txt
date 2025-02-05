@@ -1,4 +1,4 @@
-<!-- Shop Local Assistant - Inline Embed Code -->
+<!-- Shop Local Assistant - Simple Embed Code -->
 <script>
 (function() {
   // Create widget container
