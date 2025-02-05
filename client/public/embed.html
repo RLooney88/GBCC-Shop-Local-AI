@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shop Local Assistant - Embed Code</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        pre { background: #f5f5f5; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+        .highlight { background: #fff3cd; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    <h1>Shop Local Assistant - Embed Instructions</h1>
+    
+    <div class="highlight">
+        <strong>Important:</strong> Place this code where you want the chat widget to appear on your website.
+    </div>
+
+    <h2>Step 1: Add the following code to your website's HTML:</h2>
+    <pre><code>&lt;div id="shop-local-assistant"&gt;&lt;/div&gt;
+&lt;script&gt;
+  (function(w,d,s,o,f,js,fjs){
+    w['ShopLocalWidget']=o;w[o]=w[o]||function(){
+      (w[o].q=w[o].q||[]).push(arguments)};
+    js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
+    js.id='shop-local-assistant-script';
+    js.src='REPLACE_WITH_YOUR_DOMAIN/widget.js';
+    js.async=1;
+    fjs.parentNode.insertBefore(js,fjs);
+  }(window,document,'script','shopLocal'));
+&lt;/script&gt;</code></pre>
+
+    <h2>Step 2: Replace REPLACE_WITH_YOUR_DOMAIN</h2>
+    <p>Replace <code>REPLACE_WITH_YOUR_DOMAIN</code> with your actual domain where the chat widget is hosted.</p>
+
+    <h2>Example with domain replaced:</h2>
+    <pre><code>&lt;div id="shop-local-assistant"&gt;&lt;/div&gt;
+&lt;script&gt;
+  (function(w,d,s,o,f,js,fjs){
+    w['ShopLocalWidget']=o;w[o]=w[o]||function(){
+      (w[o].q=w[o].q||[]).push(arguments)};
+    js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
+    js.id='shop-local-assistant-script';
+    js.src='https://your-domain.com/widget.js';
+    js.async=1;
+    fjs.parentNode.insertBefore(js,fjs);
+  }(window,document,'script','shopLocal'));
+&lt;/script&gt;</code></pre>
+
+    <div class="highlight">
+        <p><strong>Note:</strong> Make sure to:</p>
+        <ul>
+            <li>Replace <code>your-domain.com</code> with your actual domain</li>
+            <li>Keep the script tag at the bottom of your page for optimal loading</li>
+            <li>The widget will automatically handle styling and positioning</li>
+        </ul>
+    </div>
+</body>
+</html>
