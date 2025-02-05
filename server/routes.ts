@@ -54,6 +54,12 @@ export function registerRoutes(app: Express): Server {
         message: z.string()
       }).parse(req.body);
 
+      // Get the chat history
+      const chat = await storage.getChat(chatId);
+      if (!chat) {
+        throw new Error('Chat not found');
+      }
+
       // Add user message to chat history
       await storage.addMessage(chatId, {
         role: 'user',
@@ -65,7 +71,12 @@ export function registerRoutes(app: Express): Server {
       const businesses = await getBusinesses();
       console.log(`Retrieved ${businesses.length} businesses from directory`);
 
-      const { message: responseMessage, matches } = await findMatchingBusinesses(message, businesses);
+      // Pass the entire chat history to OpenAI for context
+      const { message: responseMessage, matches } = await findMatchingBusinesses(
+        message, 
+        businesses,
+        Array.isArray(chat.messages) ? chat.messages : []
+      );
       console.log(`Found ${matches.length} matching businesses`);
 
       // Add assistant message to chat history
