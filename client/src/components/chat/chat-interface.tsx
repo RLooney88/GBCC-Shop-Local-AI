@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,25 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   };
+
+  // Query to fetch initial chat messages
+  const { data: initialChat } = useQuery({
+    queryKey: [`/api/chat/${chatId}`],
+    queryFn: async () => {
+      const res = await fetch(`/api/chat/${chatId}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to fetch chat');
+      return res.json();
+    },
+  });
+
+  // Set initial messages when chat data is loaded
+  useEffect(() => {
+    if (initialChat?.messages) {
+      setMessages(initialChat.messages);
+    }
+  }, [initialChat]);
 
   useEffect(() => {
     scrollToBottom();

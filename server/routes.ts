@@ -25,6 +25,22 @@ export function registerRoutes(app: Express): Server {
     return businesses;
   }
 
+  app.get("/api/chat/:chatId", async (req, res) => {
+    try {
+      const chatId = parseInt(req.params.chatId);
+      const chat = await storage.getChat(chatId);
+
+      if (!chat) {
+        return res.status(404).json({ error: "Chat not found" });
+      }
+
+      res.json(chat);
+    } catch (error) {
+      console.error("Error fetching chat:", error);
+      res.status(500).json({ error: "Failed to fetch chat" });
+    }
+  });
+
   app.post("/api/chat/start", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -33,6 +49,13 @@ export function registerRoutes(app: Express): Server {
         userId: user.id,
         messages: [],
         createdAt: new Date()
+      });
+
+      // Add initial assistant message
+      await storage.addMessage(chat.id, {
+        role: 'assistant',
+        content: "What kind of business/organization are you looking for?",
+        timestamp: Date.now()
       });
 
       res.json({ chatId: chat.id, userId: user.id });
