@@ -10,12 +10,12 @@ export async function sendToGHL(data: {
   }
 
   try {
-    // Format conversation for GHL
-    const formattedMessages = data.messages.map(msg => ({
-      role: msg.role,
-      content: msg.content,
-      timestamp: new Date(msg.timestamp).toISOString()
-    }));
+    // Format conversation into a readable transcript
+    const transcript = data.messages.map(msg => {
+      const timestamp = new Date(msg.timestamp).toLocaleString();
+      const role = msg.role === 'user' ? data.user.name : 'Assistant';
+      return `[${timestamp}] ${role}: ${msg.content}`;
+    }).join('\n\n');
 
     // Prepare the payload for GHL
     const payload = {
@@ -25,10 +25,10 @@ export async function sendToGHL(data: {
         email: data.user.email
       },
       conversation: {
-        messages: formattedMessages,
-        summary: `Chat session with ${data.user.name}`,
-        startedAt: formattedMessages[0]?.timestamp,
-        lastMessageAt: formattedMessages[formattedMessages.length - 1]?.timestamp
+        transcript: transcript,
+        startedAt: new Date(data.messages[0]?.timestamp).toISOString(),
+        endedAt: new Date(data.messages[data.messages.length - 1]?.timestamp).toISOString(),
+        messageCount: data.messages.length
       }
     };
 
