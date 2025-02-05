@@ -18,6 +18,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const { toast } = useToast();
   const [selectedBusiness, setSelectedBusiness] = useState<BusinessInfo | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -79,6 +80,22 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
               timestamp: Date.now()
             }
           ]);
+
+          // Show typing indicator
+          setIsTyping(true);
+
+          // Add follow-up message after a delay
+          setTimeout(() => {
+            setMessages(prev => [
+              ...prev,
+              {
+                role: 'assistant',
+                content: "Is there anything else I can help you find today?",
+                timestamp: Date.now()
+              }
+            ]);
+            setIsTyping(false);
+          }, 1500); // 1.5 second delay
         }
       }
     },
@@ -108,7 +125,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
           {messages.map((message, i) => (
             <ChatMessage key={i} message={message} />
           ))}
-          {sendMessage.isPending && (
+          {(sendMessage.isPending || isTyping) && (
             <div className="flex items-center space-x-2 text-gray-500">
               <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" />
               <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce delay-100" />
