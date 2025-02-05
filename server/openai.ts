@@ -14,7 +14,12 @@ export async function analyzeUserQuery(query: string): Promise<{
       messages: [
         {
           role: "system",
-          content: "Extract relevant keywords and business categories from user queries. Respond with JSON."
+          content: `You are a business category analyzer. Extract relevant keywords and business categories from user queries.
+            Always respond with a JSON object in this exact format:
+            {
+              "keywords": ["keyword1", "keyword2"],
+              "categories": ["category1", "category2"]
+            }`
         },
         {
           role: "user",
