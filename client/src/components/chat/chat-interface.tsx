@@ -96,7 +96,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
               }
             ]);
             setIsTyping(false);
-          }, 1500); // 1.5 second delay
+          }, 5000); // 5 second delay
         }
       }
     },

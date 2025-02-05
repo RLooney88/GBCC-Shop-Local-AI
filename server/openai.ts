@@ -33,6 +33,7 @@ export async function findMatchingBusinesses(
             - Avoid formal or corporate language
             - Never ask if the user wants contact details - these will be provided automatically
             - Focus on describing what makes the business a good match for their needs
+            - Keep recommendations concise, maximum 350 characters
 
             When analyzing businesses, consider:
             - The user's specific needs and preferences
