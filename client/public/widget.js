@@ -64,7 +64,7 @@
   };
 
   // Set iframe source to the chat application
-  iframe.src = 'https://chamber.prmthe.us/';
+  iframe.src = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '') + '/';
 
   // Add iframe to the container
   const container = document.getElementById('shop-local-assistant');
@@ -74,7 +74,7 @@
 
   // Add window message listener for potential future cross-origin communication
   window.addEventListener('message', function(event) {
-    if (event.origin === 'https://chamber.prmthe.us') {
+    if (event.origin === window.location.origin) {
       // Handle any messages from the chat widget
       console.log('Message received from chat widget:', event.data);
     }

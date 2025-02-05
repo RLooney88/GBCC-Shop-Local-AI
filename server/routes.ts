@@ -7,18 +7,12 @@ import { findMatchingBusinesses } from "./openai";
 import { z } from "zod";
 import { ZodError } from "zod";
 import { sendToGHL } from "./ghl";
-import path from "path";
-import express from "express"; // Added import for express
 
 const SHEETDB_URL = "https://sheetdb.io/api/v1/aifpp2z9ktyie";
 
 export function registerRoutes(app: Express): Server {
-  // Serve static files from the public directory
-  app.use(express.static(path.join(process.cwd(), "client", "public")));
-
-  // Business data cache with expiration
   let businessCache: { data: any[]; timestamp: number } | null = null;
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000;
 
   async function getBusinesses() {
     if (businessCache && Date.now() - businessCache.timestamp < CACHE_DURATION) {
@@ -59,7 +53,6 @@ export function registerRoutes(app: Express): Server {
         sentToGHL: false
       });
 
-      // Add initial assistant message
       await storage.addMessage(chat.id, {
         role: 'assistant',
         content: "What kind of business/organization are you looking for?",
@@ -102,8 +95,6 @@ export function registerRoutes(app: Express): Server {
       });
 
       const businesses = await getBusinesses();
-      console.log(`Retrieved ${businesses.length} businesses from directory`);
-
       const { message: responseMessage, matches, isClosing } = await findMatchingBusinesses(
         message,
         businesses,
@@ -116,7 +107,6 @@ export function registerRoutes(app: Express): Server {
         timestamp: Date.now()
       });
 
-      // If this is a closing message, send to GHL immediately
       if (isClosing) {
         const updatedChat = await storage.getChat(chatId);
         if (updatedChat && !updatedChat.sentToGHL) {
@@ -147,15 +137,13 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Start the inactive chat processor
-  const INACTIVE_CHECK_INTERVAL = 60 * 1000; // Check every minute
   setInterval(async () => {
     try {
       await processInactiveChats();
     } catch (error) {
       console.error("Error processing inactive chats:", error);
     }
-  }, INACTIVE_CHECK_INTERVAL);
+  }, 60 * 1000);
 
   const httpServer = createServer(app);
   return httpServer;
