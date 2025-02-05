@@ -60,6 +60,7 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
       return res.json();
     },
     onSuccess: (data) => {
+      // Add the user message
       setMessages(prev => [
         ...prev,
         { role: 'user', content: input, timestamp: Date.now() },
@@ -80,22 +81,13 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
 📧 ${data.businesses.email || 'Email not available'}
 🌐 ${data.businesses.website ? `[${new URL(data.businesses.website.startsWith('http') ? data.businesses.website : `https://${data.businesses.website}`).hostname}](${data.businesses.website.startsWith('http') ? data.businesses.website : `https://${data.businesses.website}`})` : 'Website not available'}`,
             timestamp: Date.now()
+          },
+          {
+            role: 'assistant',
+            content: "Is there anything else I can help you find today?",
+            timestamp: Date.now()
           }
         ]);
-
-        // Show typing indicator and follow-up question
-        setIsTyping(true);
-        setTimeout(() => {
-          setMessages(prev => [
-            ...prev,
-            {
-              role: 'assistant',
-              content: "Is there anything else I can help you find today?",
-              timestamp: Date.now()
-            }
-          ]);
-          setIsTyping(false);
-        }, 5000);
       }
     },
     onError: (error) => {
