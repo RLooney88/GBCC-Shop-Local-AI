@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 export default function Home() {
   const [chatStarted, setChatStarted] = useState(false);
   const [chatId, setChatId] = useState<number | null>(null);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (!isOpen) {
     return (
@@ -26,8 +26,7 @@ export default function Home() {
   return (
     <div className={cn(
       "fixed bottom-4 right-4 w-[400px] transition-all duration-300 ease-in-out",
-      isMinimized && "h-[60px]",
-      !isMinimized && "h-[600px]"
+      isMinimized ? "h-[60px]" : "h-[600px]"
     )}>
       <Card className="h-full flex flex-col shadow-xl border-t-4 border-t-[#00A7B7]">
         <div className="p-4 border-b flex justify-between items-center bg-[#00A7B7] text-white">
@@ -45,7 +44,10 @@ export default function Home() {
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-white hover:text-white hover:bg-[#008A99]"
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                setIsOpen(false);
+                setIsMinimized(true);
+              }}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -64,6 +66,7 @@ export default function Home() {
               <UserForm onChatStart={(id) => {
                 setChatId(id);
                 setChatStarted(true);
+                setIsMinimized(false);
               }} />
             </div>
           ) : (
