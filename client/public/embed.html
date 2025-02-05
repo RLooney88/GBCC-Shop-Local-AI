@@ -1,12 +1,9 @@
-<div id="shop-local-assistant"></div>
-<script>
-  (function(w,d,s,o,f,js,fjs){
-    w['ShopLocalWidget']=o;w[o]=w[o]||function(){
-      (w[o].q=w[o].q||[]).push(arguments)};
-    js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
-    js.id='shop-local-assistant-script';
-    js.src='https://chamber.prmthe.us/widget.js';
-    js.async=1;
-    fjs.parentNode.insertBefore(js,fjs);
-  }(window,document,'script','shopLocal'));
-</script>
+<!-- Shop Local Assistant Chat Widget -->
+<div id="shop-local-assistant">
+  <iframe 
+    src="https://ai-local-buddy-rlooney.replit.app" 
+    style="border: none; position: fixed; bottom: 20px; right: 20px; width: 400px; height: 600px; max-height: 90vh; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border-radius: 10px; z-index: 9999; background: white;"
+    title="Shop Local Assistant Chat"
+    allow="microphone"
+  ></iframe>
+</div>

@@ -29,18 +29,19 @@ const widgetSrc = path.join(process.cwd(), "client", "public", "widget.js");
 const widgetDest = path.join(staticDir, "widget.js");
 fs.copyFileSync(widgetSrc, widgetDest);
 
-// Specific route for widget.js must come before any other middleware
-app.get('/static/widget.js', (req, res) => {
-  res.set({
-    'Content-Type': 'application/javascript',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0'
-  });
-  res.sendFile(widgetDest);
-});
+// Serve static files with proper MIME types
+app.use('/static', express.static(staticDir, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
-// Serve other static files
+// Serve other static files from client/public
 app.use(express.static(path.join(process.cwd(), "client", "public"), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.js')) {
