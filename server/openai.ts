@@ -34,6 +34,10 @@ export async function findMatchingBusinesses(
             - Never ask if the user wants contact details - these will be provided automatically
             - Focus on describing what makes the business a good match for their needs
             - Keep recommendations concise, maximum 350 characters
+            - For closing messages (thank you, thanks, bye, etc.):
+              * Respond warmly without repeating contact information
+              * Don't automatically ask if they need anything else
+              * Only suggest more help if the user indicates they want to continue
 
             When analyzing businesses, consider:
             - The user's specific needs and preferences
@@ -70,7 +74,8 @@ export async function findMatchingBusinesses(
               }],
               "message": "friendly response based on match count",
               "followUpQuestion": "conversational follow-up question if needed",
-              "questionContext": "natural explanation of why I'm asking this question"
+              "questionContext": "natural explanation of why I'm asking this question",
+              "isClosing": true
             }`
         },
         {
@@ -92,9 +97,11 @@ export async function findMatchingBusinesses(
 
     const result = JSON.parse(content);
     return {
-      message: result.matches.length > 1 
-        ? `${result.message}\n\n${result.followUpQuestion}${result.questionContext ? `\n\n(${result.questionContext})` : ''}`
-        : result.message,
+      message: result.isClosing 
+        ? result.message 
+        : result.matches.length > 1 
+          ? `${result.message}\n\n${result.followUpQuestion}${result.questionContext ? `\n\n(${result.questionContext})` : ''}`
+          : result.message,
       matches: result.matches.map((match: any) => ({
         name: match.name,
         primaryServices: match.primaryServices,
