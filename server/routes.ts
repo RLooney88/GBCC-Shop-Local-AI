@@ -48,6 +48,8 @@ export function registerRoutes(app: Express): Server {
 
       // Analyze query
       const analysis = await analyzeUserQuery(message);
+      console.log("Query analysis:", analysis); // Debug log
+
       if (!analysis) {
         throw new Error("Failed to analyze query");
       }
@@ -58,21 +60,33 @@ export function registerRoutes(app: Express): Server {
         throw new Error("Invalid response from SheetDB");
       }
 
-      const matches = businesses.filter((business: any) => 
-        analysis.keywords.some(keyword => 
-          business.name?.toLowerCase().includes(keyword.toLowerCase()) ||
-          business.primaryServices?.toLowerCase().includes(keyword.toLowerCase()) ||
-          [business.category1, business.category2, business.category3].some(category => 
-            category?.toLowerCase().includes(keyword.toLowerCase())
-          )
-        )
-      );
+      console.log("Available businesses:", businesses.length); // Debug log
+
+      // Enhanced matching logic
+      const matches = businesses.filter((business: any) => {
+        const businessText = [
+          business.name,
+          business.primaryServices,
+          business.category1,
+          business.category2,
+          business.category3
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        // Match if any keyword is found in the combined business text
+        return analysis.keywords.some(keyword => businessText.includes(keyword.toLowerCase())) ||
+               analysis.categories.some(category => businessText.includes(category.toLowerCase()));
+      });
+
+      console.log("Matched businesses:", matches.length); // Debug log
 
       let response: string;
       let businessInfo: any;
 
       if (matches.length === 0) {
-        response = "I couldn't find any businesses matching your request. Could you try describing what you're looking for differently?";
+        response = "I couldn't find any businesses matching your request. Could you try describing what you're looking for differently? For example, mention the type of service or industry you're interested in.";
       } else if (matches.length === 1) {
         const business = matches[0];
         businessInfo = {

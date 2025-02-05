@@ -15,11 +15,16 @@ export async function analyzeUserQuery(query: string): Promise<{
         {
           role: "system",
           content: `You are a business category analyzer. Extract relevant keywords and business categories from user queries.
+            Consider synonyms, related terms, and industry-specific terminology.
+            For example, if someone asks for a "mechanic", include terms like "auto repair", "car service", etc.
+
             Always respond with a JSON object in this exact format:
             {
-              "keywords": ["keyword1", "keyword2"],
-              "categories": ["category1", "category2"]
-            }`
+              "keywords": ["keyword1", "keyword2", "synonym1", "synonym2"],
+              "categories": ["category1", "category2", "related_category"]
+            }
+
+            Include both specific terms from the query and related business terminology.`
         },
         {
           role: "user",
@@ -56,7 +61,7 @@ export async function generateBusinessDescription(business: BusinessInfo): Promi
       messages: [
         {
           role: "system",
-          content: "Generate a brief, friendly description (<150 chars) of a business based on its details."
+          content: "Generate a brief, friendly description (<150 chars) of a business based on its details. Highlight key services and unique features."
         },
         {
           role: "user",
@@ -84,7 +89,9 @@ export async function generateRefinementQuestion(businesses: BusinessInfo[]): Pr
       messages: [
         {
           role: "system",
-          content: "Generate a concise question to help narrow down business choices. The question should be specific to the differences between the businesses."
+          content: `Generate a concise question to help narrow down business choices. 
+            The question should focus on the key differences between the businesses, 
+            such as specialties, services, or business types.`
         },
         {
           role: "user",
