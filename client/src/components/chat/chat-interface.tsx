@@ -66,38 +66,36 @@ export function ChatInterface({ chatId }: ChatInterfaceProps) {
         { role: 'assistant', content: data.message, timestamp: Date.now() }
       ]);
       setInput("");
-      if (data.businesses) {
+
+      // Only show business info if it's a new business match and not a closing message
+      if (data.businesses && !data.isClosing) {
         setSelectedBusiness(data.businesses);
         // Add business info as a system message
-        if (data.businesses) {
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `Here's the contact information for ${data.businesses.name}:
+📞 ${data.businesses.phone || 'Phone not available'}
+📧 ${data.businesses.email || 'Email not available'}
+🌐 ${data.businesses.website ? `[${new URL(data.businesses.website.startsWith('http') ? data.businesses.website : `https://${data.businesses.website}`).hostname}](${data.businesses.website.startsWith('http') ? data.businesses.website : `https://${data.businesses.website}`})` : 'Website not available'}`,
+            timestamp: Date.now()
+          }
+        ]);
+
+        // Show typing indicator and follow-up question
+        setIsTyping(true);
+        setTimeout(() => {
           setMessages(prev => [
             ...prev,
             {
               role: 'assistant',
-              content: `Here's the contact information for ${data.businesses.name}:
-📞 ${data.businesses.phone || 'Phone not available'}
-📧 ${data.businesses.email || 'Email not available'}
-🌐 ${data.businesses.website ? `[${new URL(data.businesses.website.startsWith('http') ? data.businesses.website : `https://${data.businesses.website}`).hostname}](${data.businesses.website.startsWith('http') ? data.businesses.website : `https://${data.businesses.website}`})` : 'Website not available'}`,
+              content: "Is there anything else I can help you find today?",
               timestamp: Date.now()
             }
           ]);
-
-          // Show typing indicator
-          setIsTyping(true);
-
-          // Add follow-up message after a delay
-          setTimeout(() => {
-            setMessages(prev => [
-              ...prev,
-              {
-                role: 'assistant',
-                content: "Is there anything else I can help you find today?",
-                timestamp: Date.now()
-              }
-            ]);
-            setIsTyping(false);
-          }, 5000); // 5 second delay
-        }
+          setIsTyping(false);
+        }, 5000);
       }
     },
     onError: (error) => {
