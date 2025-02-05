@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shop Local Assistant Widget Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shop Local Assistant Widget</h1>
+        <h2>Installation</h2>
+        <p>Add this code to your website:</p>
+        <pre><code>&lt;script&gt;
+(function() {
+    const script = document.createElement('script');
+    script.src = 'https://YOUR-GITHUB-USERNAME.github.io/shop-local-widget/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+})();
+&lt;/script&gt;</code></pre>
+    </div>
+
+    <!-- Demo of the widget -->
+    <script>
+    (function() {
+        const script = document.createElement('script');
+        script.src = './widget.js';
+        script.async = true;
+        document.body.appendChild(script);
+    })();
+    </script>
+</body>
+</html>
