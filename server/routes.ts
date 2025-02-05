@@ -71,17 +71,17 @@ export function registerRoutes(app: Express): Server {
       // Enhanced matching logic with better logging
       const matches = businesses.filter((business: any) => {
         const businessText = [
-          business.name,
-          business.primaryServices,
-          business.category1,
-          business.category2,
-          business.category3
+          business['Company Name'],
+          business['Primary Services'],
+          business['Category 1'],
+          business['Category 2'],
+          business['Category 3']
         ]
           .filter(Boolean)
           .join(' ')
           .toLowerCase();
 
-        console.log(`Checking business: ${business.name}`);
+        console.log(`Checking business: ${business['Company Name']}`);
         console.log(`Business text to match against: ${businessText}`);
 
         // Match if any keyword is found in the combined business text
@@ -113,19 +113,27 @@ export function registerRoutes(app: Express): Server {
       } else if (matches.length === 1) {
         const business = matches[0];
         businessInfo = {
-          name: business.name,
-          primaryServices: business.primaryServices,
-          categories: [business.category1, business.category2, business.category3].filter(Boolean),
-          phone: business.phone,
-          email: business.email,
-          website: business.website
+          name: business['Company Name'],
+          primaryServices: business['Primary Services'],
+          categories: [
+            business['Category 1'],
+            business['Category 2'],
+            business['Category 3']
+          ].filter(Boolean),
+          phone: business['Phone Number'],
+          email: business['Email'],
+          website: business['Website']
         };
         responseMessage = await generateBusinessDescription(businessInfo);
       } else {
         responseMessage = await generateRefinementQuestion(matches.map(business => ({
-          name: business.name,
-          primaryServices: business.primaryServices,
-          categories: [business.category1, business.category2, business.category3].filter(Boolean)
+          name: business['Company Name'],
+          primaryServices: business['Primary Services'],
+          categories: [
+            business['Category 1'],
+            business['Category 2'],
+            business['Category 3']
+          ].filter(Boolean)
         })));
       }
 
@@ -136,7 +144,7 @@ export function registerRoutes(app: Express): Server {
         timestamp: Date.now()
       });
 
-      res.json({ 
+      res.json({
         message: responseMessage,
         businesses: businessInfo,
         multipleMatches: matches.length > 1
