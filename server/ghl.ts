@@ -1,6 +1,35 @@
 import axios from "axios";
 import type { User, ChatMessage } from "@shared/schema";
 
+function createConversationSummary(messages: ChatMessage[], user: User): string {
+  // Find the last inquiry from the user
+  let lastInquiry = '';
+  let matchedBusiness = null;
+  let businessInfo = '';
+
+  // Scan messages in reverse to find the last complete interaction
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+
+    // Extract business information when found
+    if (msg.role === 'assistant' && msg.content.includes('📞')) {
+      businessInfo = msg.content;
+      continue;
+    }
+
+    // Find the last user inquiry before the business info
+    if (msg.role === 'user' && !lastInquiry && businessInfo) {
+      lastInquiry = msg.content;
+      break;
+    }
+  }
+
+  // Create a concise summary
+  return `User Inquiry: ${lastInquiry || 'N/A'}
+
+${businessInfo ? `Recommended Business:\n${businessInfo}` : 'No specific business was recommended.'}`
+}
+
 export async function sendToGHL(data: {
   user: User;
   messages: ChatMessage[];
@@ -10,12 +39,10 @@ export async function sendToGHL(data: {
   }
 
   try {
-    // Format conversation into a readable transcript
-    const transcript = data.messages.map(msg => {
-      const timestamp = new Date(msg.timestamp).toLocaleString();
-      const role = msg.role === 'user' ? data.user.name : 'Assistant';
-      return `[${timestamp}] ${role}: ${msg.content}`;
-    }).join('\n\n');
+    const summary = createConversationSummary(data.messages, data.user);
+
+    // Current timestamp for the conversation end
+    const currentTime = new Date().toISOString();
 
     // Prepare the payload for GHL
     const payload = {
@@ -25,10 +52,9 @@ export async function sendToGHL(data: {
         email: data.user.email
       },
       conversation: {
-        transcript: transcript,
-        startedAt: new Date(data.messages[0]?.timestamp).toISOString(),
-        endedAt: new Date(data.messages[data.messages.length - 1]?.timestamp).toISOString(),
-        messageCount: data.messages.length
+        summary: summary,
+        endedAt: currentTime,
+        totalMessages: data.messages.length
       }
     };
 
