@@ -26,6 +26,9 @@
       justify-content: center;
       transition: transform 0.2s ease;
       z-index: 2147483648;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
     }
 
     .shop-local-button:hover {
@@ -44,12 +47,15 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       display: none;
       overflow: hidden;
-      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
     }
 
     .shop-local-chat.open {
       display: block;
-      animation: chatFadeIn 0.3s ease;
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .shop-local-iframe {
@@ -60,30 +66,7 @@
       background: white;
     }
 
-    @keyframes chatFadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
     @media (max-width: 480px) {
-      .shop-local-widget {
-        bottom: 0;
-        right: 0;
-        width: 100%;
-      }
-
-      .shop-local-button {
-        bottom: 20px;
-        right: 20px;
-        position: fixed;
-      }
-
       .shop-local-chat {
         width: 100%;
         height: 100vh;
@@ -91,10 +74,12 @@
         bottom: 0;
         right: 0;
         border-radius: 0;
+        margin: 0;
       }
 
-      .shop-local-chat.open {
-        animation: chatSlideUp 0.3s ease;
+      .shop-local-button {
+        bottom: 20px;
+        right: 20px;
       }
 
       .shop-local-iframe {
@@ -102,13 +87,12 @@
         height: 100vh;
       }
 
-      @keyframes chatSlideUp {
-        from {
-          transform: translateY(100%);
-        }
-        to {
-          transform: translateY(0);
-        }
+      .shop-local-chat.open {
+        transform: translateY(0);
+      }
+
+      .shop-local-chat:not(.open) {
+        transform: translateY(100%);
       }
     }
   `;
@@ -146,8 +130,25 @@
 
   // Add event listeners
   button.addEventListener('click', () => {
-    chat.classList.toggle('open');
-    button.style.transform = chat.classList.contains('open') ? 'scale(0)' : 'scale(1)';
+    const isOpen = chat.classList.contains('open');
+    if (!isOpen) {
+      // Open chat
+      chat.style.display = 'block';
+      // Force reflow
+      chat.offsetHeight;
+      chat.classList.add('open');
+      button.style.transform = 'scale(0)';
+    } else {
+      // Close chat
+      chat.classList.remove('open');
+      button.style.transform = 'scale(1)';
+      // Wait for transition to complete before hiding
+      setTimeout(() => {
+        if (!chat.classList.contains('open')) {
+          chat.style.display = 'none';
+        }
+      }, 300); // Match transition duration
+    }
   });
 
   // Handle escape key to close chat
@@ -155,6 +156,11 @@
     if (e.key === 'Escape' && chat.classList.contains('open')) {
       chat.classList.remove('open');
       button.style.transform = 'scale(1)';
+      setTimeout(() => {
+        if (!chat.classList.contains('open')) {
+          chat.style.display = 'none';
+        }
+      }, 300);
     }
   });
 })();
