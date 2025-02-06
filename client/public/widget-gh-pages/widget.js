@@ -9,6 +9,9 @@
     }
 
     .shop-local-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
       width: 60px;
       height: 60px;
       border-radius: 30px;
@@ -21,10 +24,7 @@
       align-items: center;
       justify-content: center;
       transition: all 0.3s ease;
-      z-index: 2147483648;
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
+      z-index: 2147483649;
     }
 
     .shop-local-button:hover {
@@ -33,8 +33,8 @@
     }
 
     .shop-local-button.hidden {
-      transform: scale(0);
       opacity: 0;
+      transform: scale(0);
       pointer-events: none;
     }
 
@@ -51,13 +51,15 @@
       opacity: 0;
       transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
       transform: translateY(20px);
-      z-index: 2147483647;
+      z-index: 2147483648;
+      pointer-events: none;
     }
 
     .shop-local-chat.open {
       max-height: 600px;
       opacity: 1;
       transform: translateY(0);
+      pointer-events: auto;
     }
 
     .shop-local-iframe {
@@ -85,11 +87,6 @@
       .shop-local-iframe {
         height: 100vh;
         border-radius: 0;
-      }
-
-      .shop-local-button {
-        bottom: 20px;
-        right: 20px;
       }
     }
   `;
@@ -129,12 +126,15 @@
 
   function toggleChat() {
     isOpen = !isOpen;
+
     if (isOpen) {
-      requestAnimationFrame(() => {
-        chat.classList.add('open');
-        button.classList.add('hidden');
-      });
+      // Open chat
+      button.classList.add('hidden');
+      // Force reflow before adding open class
+      void chat.offsetWidth;
+      chat.classList.add('open');
     } else {
+      // Close chat
       chat.classList.remove('open');
       button.classList.remove('hidden');
     }
