@@ -23,6 +23,7 @@
       align-items: center;
       justify-content: center;
       transition: transform 0.2s ease;
+      z-index: 2147483648;
     }
 
     .shop-local-button:hover {
@@ -36,19 +37,53 @@
       right: 20px;
       width: 400px;
       height: 600px;
-      max-height: calc(100vh - 100px);
+      max-height: calc(100vh - 120px);
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       display: none;
       overflow: hidden;
+      transition: all 0.3s ease;
     }
 
     .shop-local-chat.open {
       display: block;
+      animation: chatFadeIn 0.3s ease;
+    }
+
+    .shop-local-iframe {
+      border: none;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: white;
+      display: block;
+    }
+
+    @keyframes chatFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @media (max-width: 480px) {
+      .shop-local-widget {
+        bottom: 0;
+        right: 0;
+        width: 100%;
+      }
+
+      .shop-local-button {
+        bottom: 20px;
+        right: 20px;
+        position: fixed;
+      }
+
       .shop-local-chat {
         width: 100%;
         height: 100vh;
@@ -56,6 +91,24 @@
         bottom: 0;
         right: 0;
         border-radius: 0;
+      }
+
+      .shop-local-chat.open {
+        animation: chatSlideUp 0.3s ease;
+      }
+
+      .shop-local-iframe {
+        border-radius: 0;
+        height: 100vh;
+      }
+
+      @keyframes chatSlideUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
       }
     }
   `;
@@ -79,12 +132,9 @@
   // Create iframe for chat content
   const iframe = document.createElement('iframe');
   iframe.src = 'https://ai-local-buddy-rlooney.replit.app';
-  iframe.style.cssText = `
-    border: none;
-    width: 100%;
-    height: 100%;
-    border-radius: inherit;
-  `;
+  iframe.className = 'shop-local-iframe';
+  iframe.title = 'Shop Local Assistant Chat';
+  iframe.setAttribute('loading', 'lazy');
 
   // Add elements to the page
   chat.appendChild(iframe);
@@ -96,5 +146,13 @@
   button.addEventListener('click', () => {
     chat.classList.toggle('open');
     button.style.transform = chat.classList.contains('open') ? 'scale(0)' : 'scale(1)';
+  });
+
+  // Handle escape key to close chat
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && chat.classList.contains('open')) {
+      chat.classList.remove('open');
+      button.style.transform = 'scale(1)';
+    }
   });
 })();
