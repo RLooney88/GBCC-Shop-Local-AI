@@ -1,11 +1,5 @@
-// Shop Local Assistant Widget
-(function() {
-  // Create the root element for our React app
-  const root = document.createElement('div');
-  root.id = 'shop-local-root';
-  document.body.appendChild(root);
-
-  // Create and append styles
+(() => {
+  // Create styles
   const styles = document.createElement('style');
   styles.textContent = `
     .shop-local-widget {
@@ -13,6 +7,7 @@
       bottom: 20px;
       right: 20px;
       z-index: 2147483647;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     .shop-local-button {
@@ -28,6 +23,7 @@
       align-items: center;
       justify-content: center;
       transition: transform 0.2s ease;
+      z-index: 2147483648;
     }
 
     .shop-local-button:hover {
@@ -41,17 +37,19 @@
       right: 20px;
       width: 400px;
       height: 600px;
-      max-height: calc(100vh - 100px);
+      max-height: calc(100vh - 120px);
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       display: none;
       overflow: hidden;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      transition: all 0.3s ease;
+      flex-direction: column;
     }
 
     .shop-local-chat.open {
-      display: block;
+      display: flex;
+      animation: chatFadeIn 0.3s ease;
     }
 
     .shop-local-header {
@@ -61,9 +59,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .shop-local-header h2 {
+    .shop-local-title {
       margin: 0;
       font-size: 16px;
       font-weight: 600;
@@ -77,6 +76,9 @@
       padding: 4px;
       opacity: 0.8;
       transition: opacity 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .shop-local-close:hover {
@@ -84,22 +86,30 @@
     }
 
     .shop-local-content {
-      height: calc(100% - 56px);
-      overflow: auto;
+      flex: 1;
+      overflow-y: auto;
       padding: 16px;
+      background: #f8f9fa;
     }
 
     .shop-local-form {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
     }
 
     .shop-local-input {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
       border-radius: 6px;
       font-size: 14px;
+      background: white;
+      transition: border-color 0.2s ease;
+    }
+
+    .shop-local-input:focus {
+      outline: none;
+      border-color: #00A7B7;
     }
 
     .shop-local-button-submit {
@@ -108,8 +118,8 @@
       border: none;
       padding: 10px;
       border-radius: 6px;
-      cursor: pointer;
       font-weight: 500;
+      cursor: pointer;
       transition: background 0.2s ease;
     }
 
@@ -117,11 +127,15 @@
       background: #008A99;
     }
 
+    .shop-local-button-submit:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
     .shop-local-messages {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      margin-bottom: 16px;
+      gap: 12px;
     }
 
     .shop-local-message {
@@ -129,6 +143,7 @@
       border-radius: 8px;
       max-width: 80%;
       word-wrap: break-word;
+      line-height: 1.4;
     }
 
     .shop-local-message.user {
@@ -138,24 +153,76 @@
     }
 
     .shop-local-message.assistant {
-      background: #f0f0f0;
-      color: #333;
+      background: white;
+      color: #1a202c;
       align-self: flex-start;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .shop-local-message-time {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 4px;
+      display: block;
     }
 
     .shop-local-input-container {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
       padding: 16px;
       background: white;
-      border-top: 1px solid #ddd;
+      border-top: 1px solid #e2e8f0;
       display: flex;
       gap: 8px;
     }
 
+    .shop-local-typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px;
+      color: #4a5568;
+      font-size: 13px;
+    }
+
+    .shop-local-typing-dot {
+      width: 4px;
+      height: 4px;
+      background: currentColor;
+      border-radius: 50%;
+      animation: typing 1s infinite;
+    }
+
+    .shop-local-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .shop-local-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes chatFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     @media (max-width: 480px) {
+      .shop-local-widget {
+        bottom: 0;
+        right: 0;
+        width: 100%;
+      }
+
+      .shop-local-button {
+        bottom: 20px;
+        right: 20px;
+        position: fixed;
+      }
+
       .shop-local-chat {
         width: 100%;
         height: 100vh;
@@ -165,15 +232,23 @@
         border-radius: 0;
       }
 
-      .shop-local-button {
-        bottom: 20px;
-        right: 20px;
+      .shop-local-chat.open {
+        animation: chatSlideUp 0.3s ease;
+      }
+
+      @keyframes chatSlideUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
       }
     }
   `;
   document.head.appendChild(styles);
 
-  // Create the widget elements
+  // Create widget elements
   const widget = document.createElement('div');
   widget.className = 'shop-local-widget';
 
@@ -187,72 +262,100 @@
 
   const chat = document.createElement('div');
   chat.className = 'shop-local-chat';
-  chat.innerHTML = `
-    <div class="shop-local-header">
-      <h2>Shop Local Assistant</h2>
-      <button class="shop-local-close">✕</button>
-    </div>
-    <div class="shop-local-content">
-      <form class="shop-local-form">
-        <input type="text" class="shop-local-input" placeholder="Your name" required>
-        <input type="email" class="shop-local-input" placeholder="Your email" required>
-        <button type="submit" class="shop-local-button-submit">Start Chat</button>
-      </form>
-    </div>
+
+  // Create chat header
+  const header = document.createElement('div');
+  header.className = 'shop-local-header';
+  header.innerHTML = `
+    <h2 class="shop-local-title">Shop Local Assistant</h2>
+    <button class="shop-local-close">✕</button>
   `;
+
+  // Create chat content
+  const content = document.createElement('div');
+  content.className = 'shop-local-content';
+
+  // Initial form for user details
+  const form = document.createElement('form');
+  form.className = 'shop-local-form';
+  form.innerHTML = `
+    <input type="text" class="shop-local-input" placeholder="Your name" required>
+    <input type="email" class="shop-local-input" placeholder="Your email" required>
+    <button type="submit" class="shop-local-button-submit">Start Chat</button>
+  `;
+
+  content.appendChild(form);
+  chat.appendChild(header);
+  chat.appendChild(content);
 
   // Add elements to the page
   widget.appendChild(button);
   widget.appendChild(chat);
   document.body.appendChild(widget);
 
-  // Chat state
   let chatId = null;
-  let messages = [];
+  const apiBase = 'https://ai-local-buddy-rlooney.replit.app';
 
-  // Add event listeners
+  // Handle chat visibility
   button.addEventListener('click', () => {
     chat.classList.toggle('open');
+    button.style.transform = chat.classList.contains('open') ? 'scale(0)' : 'scale(1)';
   });
 
-  chat.querySelector('.shop-local-close').addEventListener('click', () => {
+  // Handle close button
+  header.querySelector('.shop-local-close').addEventListener('click', () => {
     chat.classList.remove('open');
+    button.style.transform = 'scale(1)';
+  });
+
+  // Handle escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && chat.classList.contains('open')) {
+      chat.classList.remove('open');
+      button.style.transform = 'scale(1)';
+    }
   });
 
   // Handle form submission
-  const form = chat.querySelector('.shop-local-form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = form.querySelector('input[type="text"]').value;
-    const email = form.querySelector('input[type="email"]').value;
+    const nameInput = form.querySelector('input[type="text"]');
+    const emailInput = form.querySelector('input[type="email"]');
+    const submitButton = form.querySelector('button');
 
     try {
-      const response = await fetch('/api/chat/start', {
+      submitButton.disabled = true;
+      const response = await fetch(`${apiBase}/api/chat/start`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: nameInput.value,
+          email: emailInput.value
+        })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to start chat');
-      }
-
+      if (!response.ok) throw new Error('Failed to start chat');
       const data = await response.json();
       chatId = data.chatId;
 
-      // Initialize chat interface
-      const content = chat.querySelector('.shop-local-content');
+      // Switch to chat interface
       content.innerHTML = `
         <div class="shop-local-messages"></div>
         <div class="shop-local-input-container">
-          <input type="text" class="shop-local-input" placeholder="Type your message...">
-          <button class="shop-local-button-submit" style="padding: 8px 16px;">Send</button>
+          <input type="text" class="shop-local-input" placeholder="Type your message..." style="flex: 1">
+          <button class="shop-local-button-submit" style="padding: 10px 16px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
         </div>
       `;
 
-      // Add message event listener
+      // Initialize chat with welcome message
+      addMessage('assistant', 'Hi! What kind of business are you looking for?');
+
+      // Set up message input handling
       const messageInput = content.querySelector('.shop-local-input');
       const sendButton = content.querySelector('.shop-local-button-submit');
 
@@ -261,43 +364,38 @@
         if (!message) return;
 
         messageInput.value = '';
+        messageInput.disabled = true;
+        sendButton.disabled = true;
+
         addMessage('user', message);
+        showTyping();
 
         try {
-          const response = await fetch('/api/chat/message', {
+          const response = await fetch(`${apiBase}/api/chat/message`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chatId, message })
           });
 
-          if (!response.ok) {
-            throw new Error('Failed to send message');
-          }
-
+          if (!response.ok) throw new Error('Failed to send message');
           const data = await response.json();
+
+          hideTyping();
           addMessage('assistant', data.message);
 
-          // If business info is available, display it
           if (data.businesses && !data.isClosing) {
             const business = data.businesses;
-            addMessage('assistant', `Here's a local business that might help:\n${business.name}\n${business.primaryServices}`);
+            addMessage('assistant', formatBusinessInfo(business));
           }
         } catch (error) {
           console.error('Error sending message:', error);
-          addMessage('assistant', 'Sorry, there was an error processing your message. Please try again.');
+          hideTyping();
+          addMessage('assistant', 'Sorry, there was an error. Please try again.');
+        } finally {
+          messageInput.disabled = false;
+          sendButton.disabled = false;
+          messageInput.focus();
         }
-      }
-
-      function addMessage(role, content) {
-        const messagesContainer = chat.querySelector('.shop-local-messages');
-        const messageElement = document.createElement('div');
-        messageElement.className = `shop-local-message ${role}`;
-        messageElement.textContent = content;
-        messagesContainer.appendChild(messageElement);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        messages.push({ role, content });
       }
 
       sendButton.addEventListener('click', sendMessage);
@@ -308,12 +406,49 @@
         }
       });
 
-      // Add initial message
-      addMessage('assistant', 'Hi! What kind of business are you looking for?');
-
     } catch (error) {
       console.error('Error starting chat:', error);
+      submitButton.disabled = false;
       alert('Failed to start chat. Please try again.');
     }
   });
+
+  function addMessage(role, content) {
+    const messages = content.querySelector('.shop-local-messages');
+    const message = document.createElement('div');
+    message.className = `shop-local-message ${role}`;
+    message.innerHTML = `
+      ${content}
+      <span class="shop-local-message-time">${new Date().toLocaleTimeString()}</span>
+    `;
+    messages.appendChild(message);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function showTyping() {
+    const messages = content.querySelector('.shop-local-messages');
+    const typing = document.createElement('div');
+    typing.className = 'shop-local-typing';
+    typing.innerHTML = `
+      <div class="shop-local-typing-dot"></div>
+      <div class="shop-local-typing-dot"></div>
+      <div class="shop-local-typing-dot"></div>
+    `;
+    messages.appendChild(typing);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function hideTyping() {
+    const typing = content.querySelector('.shop-local-typing');
+    if (typing) typing.remove();
+  }
+
+  function formatBusinessInfo(business) {
+    return `
+      Here's the contact information for ${business.name}:
+      ${business.phone ? `📞 ${business.phone}` : ''}
+      ${business.email ? `📧 ${business.email}` : ''}
+      ${business.website ? `🌐 ${business.website}` : ''}
+    `.trim();
+  }
 })();
