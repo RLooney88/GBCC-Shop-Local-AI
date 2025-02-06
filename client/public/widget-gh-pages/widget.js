@@ -47,17 +47,17 @@
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      transition: all 0.3s ease;
       overflow: hidden;
-      z-index: 2147483647;
       opacity: 0;
-      visibility: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+      transform: translateY(20px);
+      z-index: 2147483647;
     }
 
     .shop-local-chat.open {
       max-height: 600px;
       opacity: 1;
-      visibility: visible;
+      transform: translateY(0);
     }
 
     .shop-local-iframe {
@@ -74,10 +74,12 @@
         bottom: 0;
         right: 0;
         border-radius: 0;
+        transform: translateY(100%);
       }
 
       .shop-local-chat.open {
         max-height: 100vh;
+        transform: translateY(0);
       }
 
       .shop-local-iframe {
@@ -128,10 +130,10 @@
   function toggleChat() {
     isOpen = !isOpen;
     if (isOpen) {
-      chat.classList.add('open');
-      button.classList.add('hidden');
-      // Force layout recalculation for smooth transition
-      chat.offsetHeight;
+      requestAnimationFrame(() => {
+        chat.classList.add('open');
+        button.classList.add('hidden');
+      });
     } else {
       chat.classList.remove('open');
       button.classList.remove('hidden');
