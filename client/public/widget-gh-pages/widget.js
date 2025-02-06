@@ -29,11 +29,13 @@
 
     .shop-local-button:hover {
       background: var(--hover);
+      transform: scale(1.1);
     }
 
     .shop-local-button.hidden {
       transform: scale(0);
       opacity: 0;
+      pointer-events: none;
     }
 
     .shop-local-chat {
@@ -41,28 +43,27 @@
       bottom: 90px;
       right: 20px;
       width: 400px;
-      height: 600px;
-      max-height: calc(100vh - 120px);
+      max-height: 0;
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       transition: all 0.3s ease;
-      opacity: 0;
-      transform: translateY(20px);
-      pointer-events: none;
+      overflow: hidden;
       z-index: 2147483647;
+      opacity: 0;
+      visibility: hidden;
     }
 
     .shop-local-chat.open {
+      max-height: 600px;
       opacity: 1;
-      transform: translateY(0);
-      pointer-events: all;
+      visibility: visible;
     }
 
     .shop-local-iframe {
       border: none;
       width: 100%;
-      height: 100%;
+      height: 600px;
       border-radius: inherit;
       background: white;
     }
@@ -70,16 +71,23 @@
     @media (max-width: 480px) {
       .shop-local-chat {
         width: 100%;
-        height: 100vh;
-        max-height: 100vh;
         bottom: 0;
         right: 0;
         border-radius: 0;
-        transform: translateY(100%);
       }
 
       .shop-local-chat.open {
-        transform: translateY(0);
+        max-height: 100vh;
+      }
+
+      .shop-local-iframe {
+        height: 100vh;
+        border-radius: 0;
+      }
+
+      .shop-local-button {
+        bottom: 20px;
+        right: 20px;
       }
     }
   `;
@@ -122,6 +130,8 @@
     if (isOpen) {
       chat.classList.add('open');
       button.classList.add('hidden');
+      // Force layout recalculation for smooth transition
+      chat.offsetHeight;
     } else {
       chat.classList.remove('open');
       button.classList.remove('hidden');
