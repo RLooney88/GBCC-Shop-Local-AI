@@ -5,10 +5,6 @@
     .shop-local-widget {
       --primary: var(--shop-local-primary, #00A7B7);
       --hover: var(--shop-local-hover, #008A99);
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 2147483647;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
@@ -24,7 +20,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s ease;
+      transition: all 0.3s ease;
       z-index: 2147483648;
       position: fixed;
       bottom: 20px;
@@ -33,6 +29,11 @@
 
     .shop-local-button:hover {
       background: var(--hover);
+    }
+
+    .shop-local-button.hidden {
+      transform: scale(0);
+      opacity: 0;
     }
 
     .shop-local-chat {
@@ -45,17 +46,17 @@
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      display: none;
-      overflow: hidden;
+      transition: all 0.3s ease;
       opacity: 0;
       transform: translateY(20px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+      z-index: 2147483647;
     }
 
     .shop-local-chat.open {
-      display: block;
       opacity: 1;
       transform: translateY(0);
+      pointer-events: all;
     }
 
     .shop-local-iframe {
@@ -74,25 +75,11 @@
         bottom: 0;
         right: 0;
         border-radius: 0;
-        margin: 0;
-      }
-
-      .shop-local-button {
-        bottom: 20px;
-        right: 20px;
-      }
-
-      .shop-local-iframe {
-        border-radius: 0;
-        height: 100vh;
+        transform: translateY(100%);
       }
 
       .shop-local-chat.open {
         transform: translateY(0);
-      }
-
-      .shop-local-chat:not(.open) {
-        transform: translateY(100%);
       }
     }
   `;
@@ -128,39 +115,26 @@
   widget.appendChild(chat);
   document.body.appendChild(widget);
 
-  // Add event listeners
-  button.addEventListener('click', () => {
-    const isOpen = chat.classList.contains('open');
-    if (!isOpen) {
-      // Open chat
-      chat.style.display = 'block';
-      // Force reflow
-      chat.offsetHeight;
-      chat.classList.add('open');
-      button.style.transform = 'scale(0)';
-    } else {
-      // Close chat
-      chat.classList.remove('open');
-      button.style.transform = 'scale(1)';
-      // Wait for transition to complete before hiding
-      setTimeout(() => {
-        if (!chat.classList.contains('open')) {
-          chat.style.display = 'none';
-        }
-      }, 300); // Match transition duration
-    }
-  });
+  let isOpen = false;
 
-  // Handle escape key to close chat
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && chat.classList.contains('open')) {
+  function toggleChat() {
+    isOpen = !isOpen;
+    if (isOpen) {
+      chat.classList.add('open');
+      button.classList.add('hidden');
+    } else {
       chat.classList.remove('open');
-      button.style.transform = 'scale(1)';
-      setTimeout(() => {
-        if (!chat.classList.contains('open')) {
-          chat.style.display = 'none';
-        }
-      }, 300);
+      button.classList.remove('hidden');
+    }
+  }
+
+  // Add event listeners
+  button.addEventListener('click', toggleChat);
+
+  // Handle escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen) {
+      toggleChat();
     }
   });
 })();
