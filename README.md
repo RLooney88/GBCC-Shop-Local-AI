@@ -1,40 +1,16 @@
-├── client/               # Frontend React application
-│   ├── public/          # Static assets and widget files
-│   └── src/             # React source code
-├── server/              # Express.js backend
-│   ├── routes.ts        # API routes
-│   ├── openai.ts        # OpenAI integration
-│   └── index.ts         # Server entry point
-├── shared/              # Shared types and utilities
-└── static/              # Compiled static files
+# Using psql
+createdb your_database_name
+
+# Or using PostgreSQL command
+psql -c "CREATE DATABASE your_database_name;"
 ```
 
-## Database Setup
-
-The project uses PostgreSQL with Drizzle ORM for database management. To set up the database:
-
-1. Create a PostgreSQL database
-2. Copy `.env.example` to `.env` and update with your database credentials:
-```env
-DATABASE_URL=postgresql://[user]:[password]@[host]:[port]/[database]
-PGUSER=your_username
-PGPASSWORD=your_password
-PGHOST=your_host
-PGPORT=5432
-PGDATABASE=your_database_name
-```
-
-3. Run database migrations:
+2. Copy the environment template:
 ```bash
-npm run db:push
+cp .env.example .env
 ```
 
-This will create all necessary tables according to the schema defined in `shared/schema.ts`.
-
-## Environment Variables
-
-Create a `.env` file with the following variables:
-
+3. Update `.env` with your database credentials:
 ```env
 # Database Configuration
 DATABASE_URL=postgresql://[user]:[password]@[host]:[port]/[database]
@@ -51,24 +27,44 @@ OPENAI_API_KEY=your_openai_api_key
 GHL_WEBHOOK_URL=your_ghl_webhook_url
 ```
 
-## Setup Instructions
-
-1. Clone the repository:
-```bash
-git clone <your-repository-url>
-cd shop-local-assistant
-```
-
-2. Install dependencies:
+4. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Set up environment variables:
-- Copy `.env.example` to `.env`
-- Fill in your environment variables
+5. Push the schema to create all tables:
+```bash
+npm run db:push
+```
 
-4. Start the development server:
+This will create the following tables according to `shared/schema.ts`:
+- `users`: Stores user information (id, name, email)
+- `chats`: Stores chat sessions and messages
+
+To verify the setup:
+```bash
+# Connect to your database
+psql your_database_name
+
+# List tables
+\dt
+
+# View table schemas
+\d users
+\d chats
+```
+
+## Getting Started
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd <repository-name>
+```
+
+2. Follow the Database Setup From Scratch steps above
+
+3. Start the development server:
 ```bash
 npm run dev
 ```
