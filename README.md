@@ -10,14 +10,14 @@ psql -c "CREATE DATABASE your_database_name;"
 cp .env.example .env
 ```
 
-3. Update `.env` with your database credentials:
+3. Update `.env` with your database credentials. You'll need:
 ```env
 # Database Configuration
 DATABASE_URL=postgresql://[user]:[password]@[host]:[port]/[database]
 PGUSER=your_username
 PGPASSWORD=your_password
-PGHOST=your_host
-PGPORT=5432
+PGHOST=localhost     # Use localhost for local development
+PGPORT=5432         # Default PostgreSQL port
 PGDATABASE=your_database_name
 
 # OpenAI Configuration
@@ -27,32 +27,88 @@ OPENAI_API_KEY=your_openai_api_key
 GHL_WEBHOOK_URL=your_ghl_webhook_url
 ```
 
-4. Install dependencies:
+4. Install project dependencies:
 ```bash
 npm install
 ```
 
-5. Push the schema to create all tables:
+5. Push the database schema:
 ```bash
 npm run db:push
 ```
 
-This will create the following tables according to `shared/schema.ts`:
+This will create two tables in your database:
 - `users`: Stores user information (id, name, email)
-- `chats`: Stores chat sessions and messages
+- `chats`: Stores chat sessions and messages (id, user_id, messages, created_at, last_activity_at, sent_to_ghl)
 
-To verify the setup:
+## Verification
+
+To verify your setup:
+
+1. Connect to your database:
 ```bash
-# Connect to your database
 psql your_database_name
+```
 
-# List tables
+2. Check if tables were created:
+```sql
 \dt
+```
+You should see `users` and `chats` tables listed.
 
-# View table schemas
+3. View table structures:
+```sql
 \d users
 \d chats
 ```
+
+The schemas should match:
+
+### Users Table
+- `id`: serial (auto-incrementing integer), primary key
+- `name`: text, not null
+- `email`: text, not null
+
+### Chats Table
+- `id`: serial (auto-incrementing integer), primary key
+- `user_id`: integer, not null, references users(id)
+- `messages`: jsonb, not null, default '[]'
+- `created_at`: timestamp, not null, default now()
+- `last_activity_at`: timestamp, not null, default now()
+- `sent_to_ghl`: boolean, not null, default false
+
+## Troubleshooting
+
+If you encounter any issues:
+
+1. Ensure PostgreSQL is running:
+```bash
+pg_isready
+```
+
+2. Check database connection:
+```bash
+psql -d your_database_name -c "SELECT 1"
+```
+
+3. If schema push fails, you can try:
+```bash
+# Clear any existing tables (careful, this deletes all data!)
+psql your_database_name -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
+# Then try pushing the schema again
+npm run db:push
+```
+
+## Running the Application
+
+After database setup is complete:
+
+```bash
+npm run dev
+```
+
+The application should now be running with a properly configured database.
 
 ## Getting Started
 
