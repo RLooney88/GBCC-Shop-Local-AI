@@ -1,27 +1,3 @@
-# Shop Local Assistant
-
-A powerful AI-powered business discovery platform that offers intelligent matching through a responsive, user-friendly chat interface.
-
-## Features
-
-- AI-powered chat interface for business discovery
-- Responsive widget design
-- Cross-origin iframe support
-- Multiple embedding options
-- OpenAI integration for intelligent matching
-- Real-time chat capabilities
-
-## Tech Stack
-
-- **Frontend**: React + TypeScript
-- **Backend**: Node.js/Express.js + TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
-- **AI Integration**: OpenAI API
-- **Styling**: Tailwind CSS + shadcn/ui
-
-## Project Structure
-
-```
 ├── client/               # Frontend React application
 │   ├── public/          # Static assets and widget files
 │   └── src/             # React source code
@@ -33,14 +9,46 @@ A powerful AI-powered business discovery platform that offers intelligent matchi
 └── static/              # Compiled static files
 ```
 
+## Database Setup
+
+The project uses PostgreSQL with Drizzle ORM for database management. To set up the database:
+
+1. Create a PostgreSQL database
+2. Copy `.env.example` to `.env` and update with your database credentials:
+```env
+DATABASE_URL=postgresql://[user]:[password]@[host]:[port]/[database]
+PGUSER=your_username
+PGPASSWORD=your_password
+PGHOST=your_host
+PGPORT=5432
+PGDATABASE=your_database_name
+```
+
+3. Run database migrations:
+```bash
+npm run db:push
+```
+
+This will create all necessary tables according to the schema defined in `shared/schema.ts`.
+
 ## Environment Variables
 
 Create a `.env` file with the following variables:
 
 ```env
-DATABASE_URL=postgresql://...
-OPENAI_API_KEY=sk-...
-GHL_WEBHOOK_URL=https://...
+# Database Configuration
+DATABASE_URL=postgresql://[user]:[password]@[host]:[port]/[database]
+PGUSER=your_username
+PGPASSWORD=your_password
+PGHOST=your_host
+PGPORT=5432
+PGDATABASE=your_database_name
+
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key
+
+# GHL Configuration
+GHL_WEBHOOK_URL=your_ghl_webhook_url
 ```
 
 ## Setup Instructions
@@ -71,18 +79,3 @@ Add the widget to any website with a single line of code:
 
 ```html
 <script src="https://your-domain/widget.js"></script>
-```
-
-For more embedding options, see the `/client/public/embed-instructions.md` file.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-MIT License - see the [LICENSE](LICENSE) file for details
