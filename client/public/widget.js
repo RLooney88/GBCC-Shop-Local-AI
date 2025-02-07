@@ -373,7 +373,9 @@
         try {
           const response = await fetch(`${apiBase}/api/chat/message`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ chatId, message })
           });
 
@@ -387,10 +389,18 @@
             const business = data.businesses;
             addMessage('assistant', formatBusinessInfo(business));
           }
+
+          if (data.showTyping) {
+            // Show typing indicator for 6 seconds before the closing message
+            showTyping();
+            await new Promise(resolve => setTimeout(resolve, 6000));
+            hideTyping();
+            addMessage('assistant', "Is there anything else I can help you with today?");
+          }
         } catch (error) {
           console.error('Error sending message:', error);
           hideTyping();
-          addMessage('assistant', 'Sorry, there was an error. Please try again.');
+          addMessage('assistant', 'Sorry, there was an error processing your message. Please try again.');
         } finally {
           messageInput.disabled = false;
           sendButton.disabled = false;

@@ -8,6 +8,9 @@ import { z } from "zod";
 import { ZodError } from "zod";
 import { sendToGHL } from "./ghl";
 
+// Add utility function for delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const SHEETDB_URL = process.env.SHEETDB_URL;
 if (!SHEETDB_URL) {
   throw new Error("SHEETDB_URL environment variable is required");
@@ -111,6 +114,9 @@ export function registerRoutes(app: Express): Server {
       });
 
       if (isClosing) {
+        // Add 6-second delay before sending the final response
+        await delay(6000);
+
         const updatedChat = await storage.getChat(chatId);
         if (updatedChat && !updatedChat.sentToGHL) {
           await sendToGHL({
@@ -126,7 +132,8 @@ export function registerRoutes(app: Express): Server {
         businesses: matches.length === 1 ? matches[0] : null,
         multipleMatches: matches.length > 1,
         matchCount: matches.length,
-        isClosing
+        isClosing,
+        showTyping: isClosing // Add this flag to indicate typing animation
       });
 
     } catch (error) {
