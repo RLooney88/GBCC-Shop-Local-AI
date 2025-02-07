@@ -23,9 +23,9 @@ export default function Home() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 w-[400px] h-[600px] transition-all duration-300 ease-in-out">
-      <Card className="h-full flex flex-col shadow-xl border-t-4 border-t-[#00A7B7]">
-        <div className="p-4 border-b flex justify-between items-center bg-[#00A7B7] text-white">
+    <div className="fixed sm:bottom-4 sm:right-4 w-[100vw] sm:w-[400px] h-[100vh] sm:h-[95vh] lg:h-[600px] transition-all duration-300 ease-in-out">
+      <Card className="h-full flex flex-col shadow-xl border-0 rounded-none sm:rounded-lg">
+        <div className="p-4 border-b flex justify-between items-center rounded-none sm:rounded-t-lg bg-[#00A7B7] text-white">
           <h2 className="font-semibold">The Shop Local Assistant</h2>
           <Button
             variant="ghost"
@@ -43,10 +43,12 @@ export default function Home() {
               <p className="text-gray-600 mb-4">
                 Hi there! Introduce yourself to begin!
               </p>
-              <UserForm onChatStart={(id) => {
-                setChatId(id);
-                setChatStarted(true);
-              }} />
+              <UserForm
+                onChatStart={(id) => {
+                  setChatId(id);
+                  setChatStarted(true);
+                }}
+              />
             </div>
           ) : (
             <ChatInterface chatId={chatId!} />
