@@ -8,7 +8,10 @@ import { z } from "zod";
 import { ZodError } from "zod";
 import { sendToGHL } from "./ghl";
 
-const SHEETDB_URL = process.env.SHEETDB_URL || "https://sheetdb.io/api/v1/aifpp2z9ktyie";
+const SHEETDB_URL = process.env.SHEETDB_URL;
+if (!SHEETDB_URL) {
+  throw new Error("SHEETDB_URL environment variable is required");
+}
 
 export function registerRoutes(app: Express): Server {
   let businessCache: { data: any[]; timestamp: number } | null = null;
