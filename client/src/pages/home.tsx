@@ -54,17 +54,22 @@ export default function Home() {
     ? 'translate-y-0 visible'
     : 'duration-700 translate-y-full invisible';
 
+  const clsOpen = !isOpen
+    ? 'duration-700 bg-[#00A7B7] hover:bg-[#008A99] scale-100 hover:scale-110'
+    : 'scale-0';
+
   return (
     <>
       {/* Floating Button */}
-      {!isOpen && (
-        <Button
-          className="fixed bottom-4 right-4 bg-[#00A7B7] hover:bg-[#008A99] rounded-full p-4 shadow-lg"
-          onClick={() => setIsOpen(true)}
-        >
-          <MessageCircle className="h-6 w-6 text-white" />
-        </Button>
-      )}
+      <Button
+        className={cn(
+          'fixed bottom-4 right-4 transition-all duration-300 ease-in-out w-[50px] h-[50px] rounded-full p-4 shadow-lg focus-visible:ring-0',
+          clsOpen
+        )}
+        onClick={() => setIsOpen(true)}
+      >
+        <MessageCircle className="text-white" />
+      </Button>
 
       {/* Chat Widget (iframe only) */}
       {isOpen && (
