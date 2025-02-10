@@ -44,13 +44,21 @@ app.get('/widget.js', (req, res) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Enable CORS for all routes
+// Enable CORS and frame embedding
 app.use((req, res, next) => {
+  const origin = req.headers.origin;
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   res.header('X-Frame-Options', 'ALLOW-FROM *');
   res.header('Content-Security-Policy', "frame-ancestors *");
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+
   next();
 });
 
@@ -107,7 +115,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = 5000;
+  const PORT = process.env.PORT || 5000;
   server.listen(PORT, "0.0.0.0", () => {
     log(`serving on port ${PORT}`);
   });

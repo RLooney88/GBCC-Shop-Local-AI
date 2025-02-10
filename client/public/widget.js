@@ -299,7 +299,7 @@
   document.body.appendChild(widget);
 
   let chatId = null;
-  const apiBase = 'https://ai-local-buddy-rlooney.replit.app';
+  const apiBase = window.location.origin;
 
   // Handle chat visibility
   button.addEventListener('click', () => {
