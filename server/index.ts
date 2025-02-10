@@ -50,10 +50,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Contens-Type", "text/html; charset=utf-8; application/json");
   res.header("Access-Control-Allow-Headers", "Content-Type");
   res.header("X-Frame-Options", "ALLOW-FROM *");
-  res.header("Content-Security-Policy", "frame-ancestors *");
+  res.header("Content-Security-Policy", "frame-ancestors https:;");
   res.header("referrer-policy", "origin-when-cross-origin");
   res.header("X-Content-Type-Options", "nosniff");
   next();
