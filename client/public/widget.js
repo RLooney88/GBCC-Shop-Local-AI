@@ -299,10 +299,13 @@
   document.body.appendChild(widget);
 
   let chatId = null;
-  // Update apiBase to work with both local and deployed environments
-  const apiBase = window.location.origin.includes('localhost') 
-    ? window.location.origin 
+  // Determine the API base URL based on the deployment environment
+  const apiBase = window.location.origin.includes('localhost') || window.location.origin.includes('0.0.0.0')
+    ? window.location.origin
     : 'https://' + window.location.hostname;
+
+  console.log('Shop Local Widget initialized with API base:', apiBase);
+
 
   // Handle chat visibility
   button.addEventListener('click', () => {

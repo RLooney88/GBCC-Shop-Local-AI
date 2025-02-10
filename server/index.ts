@@ -22,12 +22,12 @@ app.get('/widget.js', (req, res) => {
   try {
     if (fs.existsSync(widgetPath)) {
       const content = fs.readFileSync(widgetPath, 'utf8');
-      // Set headers explicitly
+      // Set headers explicitly for CORS and caching
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'public, max-age=0');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       log(`Serving widget.js with content type: application/javascript`);
       res.send(content);
@@ -45,9 +45,8 @@ app.get('/widget.js', (req, res) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Enable CORS and frame embedding with proper error handling
+// Enhanced CORS and security headers
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -59,20 +58,21 @@ app.use((req, res, next) => {
     res.sendStatus(200);
     return;
   }
-
   next();
 });
 
-// Add express static middleware for public directory with proper error handling
+// Static file serving with proper headers
 app.use(express.static(path.join(process.cwd(), "client", "public"), {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.js')) {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=0');
     }
-  }
+  },
+  fallthrough: true
 }));
 
-// Logging middleware
+// Logging middleware with improved error handling
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -89,13 +89,9 @@ app.use((req, res, next) => {
     if (path.startsWith("/api") || path.includes('.js') || path.includes('widget')) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        const stringified = JSON.stringify(capturedJsonResponse);
+        logLine += ` :: ${stringified.length > 100 ? stringified.slice(0, 100) + '...' : stringified}`;
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
       log(logLine);
     }
   });
@@ -104,26 +100,30 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = registerRoutes(app);
+  try {
+    const server = registerRoutes(app);
 
-  // Global error handler
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    log(`Error handling request: ${err.message}`);
-    res.status(status).json({ message });
-    throw err;
-  });
+    // Global error handler with improved logging
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+      log(`Error handling request: ${err.message}`);
+      res.status(status).json({ message });
+    });
 
-  // Set up Vite or serve static files based on environment
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    // Set up environment-specific configuration
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+
+    const PORT = process.env.PORT || 5000;
+    server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
+      log(`Server running in ${app.get("env")} mode on port ${PORT}`);
+    });
+  } catch (error) {
+    log(`Failed to start server: ${error}`);
+    process.exit(1);
   }
-
-  const PORT = process.env.PORT || 5000;
-  server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
-    log(`serving on port ${PORT}`);
-  });
 })();
