@@ -1,20 +1,25 @@
-import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import dotenv from "dotenv";
+dotenv.config();
 
 // Ensure NODE_ENV is set with a default value
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+process.env.NODE_ENV = process.env.NODE_ENV || "development";
 
 // Validate required environment variables at startup
-const requiredEnvVars = ['SHEETDB_URL', 'OPENAI_API_KEY', 'GHL_WEBHOOK_URL'];
-const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+const requiredEnvVars = ["SHEETDB_URL", "OPENAI_API_KEY", "GHL_WEBHOOK_URL"];
+const missingEnvVars = requiredEnvVars.filter(
+  (varName) => !process.env[varName],
+);
 
 if (missingEnvVars.length > 0) {
-  console.error(`ERROR: Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  console.error(
+    `ERROR: Missing required environment variables: ${missingEnvVars.join(", ")}`,
+  );
   process.exit(1);
 }
 
@@ -29,14 +34,14 @@ app.use(express.urlencoded({ extended: false }));
 
 // Enhanced CORS and security headers
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  res.header('X-Frame-Options', 'ALLOW-FROM *');
-  res.header('Content-Security-Policy', "frame-ancestors *");
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.header("X-Frame-Options", "ALLOW-FROM *");
+  res.header("Content-Security-Policy", "frame-ancestors *");
 
   // Handle preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.sendStatus(200);
     return;
   }
@@ -44,9 +49,10 @@ app.use((req, res, next) => {
 });
 
 // Determine the correct static files directory based on environment
-const staticDir = process.env.NODE_ENV === 'production'
-  ? path.join(process.cwd(), "dist", "public")
-  : path.join(process.cwd(), "client", "public");
+const staticDir =
+  process.env.NODE_ENV === "production"
+    ? path.join(process.cwd(), "dist", "public")
+    : path.join(process.cwd(), "client", "public");
 
 // Ensure static directory exists
 if (!fs.existsSync(staticDir)) {
@@ -54,32 +60,34 @@ if (!fs.existsSync(staticDir)) {
 }
 
 // Static file serving with proper headers
-app.use(express.static(staticDir, {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-cache');
-    }
-  }
-}));
+app.use(
+  express.static(staticDir, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".js")) {
+        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache");
+      }
+    },
+  }),
+);
 
 // Specific route for widget.js in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('/widget.js', (req, res) => {
-    const widgetPath = path.join(staticDir, 'widget.js');
+if (process.env.NODE_ENV === "production") {
+  app.get("/widget.js", (req, res) => {
+    const widgetPath = path.join(staticDir, "widget.js");
     try {
       if (fs.existsSync(widgetPath)) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Cache-Control", "no-cache");
         res.sendFile(widgetPath);
       } else {
         log(`Widget file not found at ${widgetPath}`);
-        res.status(404).send('Widget not found');
+        res.status(404).send("Widget not found");
       }
     } catch (error) {
       log(`Error serving widget.js: ${error}`);
-      res.status(500).send('Error serving widget.js');
+      res.status(500).send("Error serving widget.js");
     }
   });
 }
@@ -98,7 +106,11 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api") || path.includes('.js') || path.includes('widget')) {
+    if (
+      path.startsWith("/api") ||
+      path.includes(".js") ||
+      path.includes("widget")
+    ) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
@@ -124,7 +136,7 @@ app.use((req, res, next) => {
     });
 
     // Set up environment-specific configuration
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       await setupVite(app, server);
     } else {
       // Serve static files from the dist/public directory
@@ -132,30 +144,33 @@ app.use((req, res, next) => {
       app.use(express.static(distDir));
 
       // Special handling for widget.js
-      app.get('/widget.js', (req, res) => {
-        const widgetPath = path.join(distDir, 'widget.js');
+      app.get("/widget.js", (req, res) => {
+        const widgetPath = path.join(distDir, "widget.js");
         try {
           if (fs.existsSync(widgetPath)) {
-            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader(
+              "Content-Type",
+              "application/javascript; charset=utf-8",
+            );
+            res.setHeader("Access-Control-Allow-Origin", "*");
+            res.setHeader("Cache-Control", "no-cache");
             res.sendFile(widgetPath);
           } else {
             log(`Widget file not found at ${widgetPath}`);
-            res.status(404).send('Widget not found');
+            res.status(404).send("Widget not found");
           }
         } catch (error) {
           log(`Error serving widget.js: ${error}`);
-          res.status(500).send('Error serving widget.js');
+          res.status(500).send("Error serving widget.js");
         }
       });
 
       // Handle client-side routing by serving index.html for non-API routes
-      app.get('*', (req, res, next) => {
-        if (req.path.startsWith('/api')) {
+      app.get("*", (req, res, next) => {
+        if (req.path.startsWith("/api")) {
           return next();
         }
-        res.sendFile(path.join(distDir, 'index.html'));
+        res.sendFile(path.join(distDir, "index.html"));
       });
     }
 

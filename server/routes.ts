@@ -1,18 +1,19 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import axios from "axios";
-import 'dotenv/config'
 import { storage, processInactiveChats } from "./storage";
 import { insertUserSchema } from "@shared/schema";
 import { findMatchingBusinesses } from "./openai";
 import { z } from "zod";
 import { ZodError } from "zod";
 import { sendToGHL } from "./ghl";
+import dotenv from "dotenv";
+dotenv.config();
 
 // Environment variables are already validated in index.ts
 const SHEETDB_URL = process.env.SHEETDB_URL;
 if (!SHEETDB_URL) {
-  throw new Error('SHEETDB_URL environment variable is not configured');
+  throw new Error("SHEETDB_URL environment variable is not configured");
 }
 
 export function registerRoutes(app: Express): Server {
@@ -20,29 +21,32 @@ export function registerRoutes(app: Express): Server {
   const CACHE_DURATION = 5 * 60 * 1000;
 
   async function getBusinesses() {
-    if (businessCache && Date.now() - businessCache.timestamp < CACHE_DURATION) {
+    if (
+      businessCache &&
+      Date.now() - businessCache.timestamp < CACHE_DURATION
+    ) {
       return businessCache.data;
     }
 
     try {
-      console.log('Environment Check:', {
+      console.log("Environment Check:", {
         nodeEnv: process.env.NODE_ENV,
         hasSheetdbUrl: !!process.env.SHEETDB_URL,
         hasOpenAiKey: !!process.env.OPENAI_API_KEY,
-        hasGhlWebhook: !!process.env.GHL_WEBHOOK_URL
+        hasGhlWebhook: !!process.env.GHL_WEBHOOK_URL,
       });
 
       if (!SHEETDB_URL) {
-        console.error('SHEETDB_URL is not available in the environment');
-        throw new Error('SheetDB configuration is missing');
+        console.error("SHEETDB_URL is not available in the environment");
+        throw new Error("SheetDB configuration is missing");
       }
 
       console.log(`Attempting to fetch businesses from SheetDB...`);
       const response = await axios.get(SHEETDB_URL);
 
       if (!response.data) {
-        console.error('No data received from SheetDB');
-        throw new Error('No data received from SheetDB');
+        console.error("No data received from SheetDB");
+        throw new Error("No data received from SheetDB");
       }
 
       const businesses = response.data;
@@ -52,13 +56,16 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error fetching businesses from SheetDB:", error);
       if (axios.isAxiosError(error)) {
-        console.error('Axios error details:', {
+        console.error("Axios error details:", {
           status: error.response?.status,
           statusText: error.response?.statusText,
-          data: error.response?.data
+          data: error.response?.data,
         });
       }
-      throw new Error("Failed to fetch business data: " + (error instanceof Error ? error.message : 'Unknown error'));
+      throw new Error(
+        "Failed to fetch business data: " +
+          (error instanceof Error ? error.message : "Unknown error"),
+      );
     }
   }
 
@@ -87,22 +94,27 @@ export function registerRoutes(app: Express): Server {
         messages: [],
         createdAt: new Date(),
         lastActivityAt: new Date(),
-        sentToGHL: false
+        sentToGHL: false,
       });
 
       await storage.addMessage(chat.id, {
-        role: 'assistant',
+        role: "assistant",
         content: "What kind of business/organization are you looking for?",
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       res.json({ chatId: chat.id, userId: user.id });
     } catch (error) {
       console.error("Error in chat start:", error);
       if (error instanceof ZodError) {
-        res.status(400).json({ error: "Invalid input data", details: error.errors });
+        res
+          .status(400)
+          .json({ error: "Invalid input data", details: error.errors });
       } else {
-        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred";
         res.status(500).json({ error: errorMessage });
       }
     }
@@ -110,38 +122,44 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/chat/message", async (req, res) => {
     try {
-      const { chatId, message } = z.object({
-        chatId: z.number(),
-        message: z.string()
-      }).parse(req.body);
+      const { chatId, message } = z
+        .object({
+          chatId: z.number(),
+          message: z.string(),
+        })
+        .parse(req.body);
 
       const chat = await storage.getChat(chatId);
       if (!chat) {
-        throw new Error('Chat not found');
+        throw new Error("Chat not found");
       }
 
       const user = await storage.getUser(chat.userId);
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
 
       await storage.addMessage(chatId, {
-        role: 'user',
+        role: "user",
         content: message,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       const businesses = await getBusinesses();
-      const { message: responseMessage, matches, isClosing } = await findMatchingBusinesses(
+      const {
+        message: responseMessage,
+        matches,
+        isClosing,
+      } = await findMatchingBusinesses(
         message,
         businesses,
-        Array.isArray(chat.messages) ? chat.messages : []
+        Array.isArray(chat.messages) ? chat.messages : [],
       );
 
       await storage.addMessage(chatId, {
-        role: 'assistant',
+        role: "assistant",
         content: responseMessage,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       if (isClosing) {
@@ -149,7 +167,9 @@ export function registerRoutes(app: Express): Server {
         if (updatedChat && !updatedChat.sentToGHL) {
           await sendToGHL({
             user,
-            messages: Array.isArray(updatedChat.messages) ? updatedChat.messages : []
+            messages: Array.isArray(updatedChat.messages)
+              ? updatedChat.messages
+              : [],
           });
           await storage.markChatSentToGHL(updatedChat.id);
         }
@@ -161,15 +181,19 @@ export function registerRoutes(app: Express): Server {
         multipleMatches: matches.length > 1,
         matchCount: matches.length,
         isClosing,
-        showTyping: isClosing
+        showTyping: isClosing,
       });
-
     } catch (error) {
       console.error("Error processing message:", error);
       if (error instanceof ZodError) {
-        res.status(400).json({ error: "Invalid input data", details: error.errors });
+        res
+          .status(400)
+          .json({ error: "Invalid input data", details: error.errors });
       } else {
-        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred";
         res.status(500).json({ error: errorMessage });
       }
     }
@@ -188,4 +212,4 @@ export function registerRoutes(app: Express): Server {
 }
 
 // Add utility function for delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
