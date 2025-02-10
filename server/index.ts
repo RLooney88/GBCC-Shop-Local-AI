@@ -116,7 +116,7 @@ app.use((req, res, next) => {
   }
 
   const PORT = process.env.PORT || 5000;
-  server.listen(PORT, "0.0.0.0", () => {
+  server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
     log(`serving on port ${PORT}`);
   });
 })();
