@@ -17,7 +17,7 @@
   document.head.appendChild(styles);
 
   // Create iframe for chat content
-  const iframe = document.createElement("div");
+  const iframe = document.createElement("iframe");
   iframe.src = "https://ai-local-buddy-1-rlooney.replit.app";
   iframe.className = "shop-local-widget";
   iframe.title = "Shop Local Assistant Chat";
