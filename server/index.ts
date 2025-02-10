@@ -178,6 +178,7 @@ app.use((req, res, next) => {
     const PORT = process.env.PORT || 5000;
     server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
       log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+      log(`Server URL: ${process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:' + PORT}`);
     });
   } catch (error) {
     log(`Failed to start server: ${error}`);
