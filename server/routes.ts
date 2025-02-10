@@ -11,7 +11,12 @@ import { sendToGHL } from "./ghl";
 // Add utility function for delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const SHEETDB_URL = process.env.SHEETDB_URL || "https://sheetdb.io/api/v1/aifpp2z9ktyie";
+// Check for required environment variable
+if (!process.env.SHEETDB_URL) {
+  throw new Error("SHEETDB_URL environment variable is required");
+}
+
+const SHEETDB_URL = process.env.SHEETDB_URL;
 
 export function registerRoutes(app: Express): Server {
   let businessCache: { data: any[]; timestamp: number } | null = null;
@@ -22,10 +27,15 @@ export function registerRoutes(app: Express): Server {
       return businessCache.data;
     }
 
-    const response = await axios.get(SHEETDB_URL);
-    const businesses = response.data;
-    businessCache = { data: businesses, timestamp: Date.now() };
-    return businesses;
+    try {
+      const response = await axios.get(SHEETDB_URL);
+      const businesses = response.data;
+      businessCache = { data: businesses, timestamp: Date.now() };
+      return businesses;
+    } catch (error) {
+      console.error("Error fetching businesses from SheetDB:", error);
+      throw new Error("Failed to fetch business data");
+    }
   }
 
   app.get("/api/chat/:chatId", async (req, res) => {
