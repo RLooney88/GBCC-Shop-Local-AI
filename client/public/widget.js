@@ -178,7 +178,12 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      padding: 8px;
+      padding: 8px 12px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      margin-bottom: 8px;
+      align-self: flex-start;
       color: #4a5568;
       font-size: 13px;
     }
@@ -195,8 +200,8 @@
     .shop-local-typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
     @keyframes typing {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
+      0%, 100% { opacity: 0.4; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-2px); }
     }
 
     @keyframes chatFadeIn {
