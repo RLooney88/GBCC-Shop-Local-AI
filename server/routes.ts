@@ -20,6 +20,11 @@ export function registerRoutes(app: Express): Server {
   let businessCache: { data: any[]; timestamp: number } | null = null;
   const CACHE_DURATION = 5 * 60 * 1000;
 
+  // Add health check endpoint
+  app.get("/api/health", (_, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   async function getBusinesses() {
     if (
       businessCache &&
