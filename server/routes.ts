@@ -11,10 +11,7 @@ import { sendToGHL } from "./ghl";
 // Add utility function for delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const SHEETDB_URL = process.env.SHEETDB_URL;
-if (!SHEETDB_URL) {
-  throw new Error("SHEETDB_URL environment variable is required");
-}
+const SHEETDB_URL = process.env.SHEETDB_URL || "https://sheetdb.io/api/v1/aifpp2z9ktyie";
 
 export function registerRoutes(app: Express): Server {
   let businessCache: { data: any[]; timestamp: number } | null = null;
