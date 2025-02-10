@@ -11,6 +11,9 @@ import { sendToGHL } from "./ghl";
 
 // Environment variables are already validated in index.ts
 const SHEETDB_URL = process.env.SHEETDB_URL;
+if (!SHEETDB_URL) {
+  throw new Error('SHEETDB_URL environment variable is not configured');
+}
 
 export function registerRoutes(app: Express): Server {
   let businessCache: { data: any[]; timestamp: number } | null = null;
