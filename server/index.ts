@@ -45,9 +45,31 @@ app.use(express.static(staticDir, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache');
     }
   }
 }));
+
+// Specific route for widget.js in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('/widget.js', (req, res) => {
+    const widgetPath = path.join(staticDir, 'widget.js');
+    try {
+      if (fs.existsSync(widgetPath)) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.sendFile(widgetPath);
+      } else {
+        log(`Widget file not found at ${widgetPath}`);
+        res.status(404).send('Widget not found');
+      }
+    } catch (error) {
+      log(`Error serving widget.js: ${error}`);
+      res.status(500).send('Error serving widget.js');
+    }
+  });
+}
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -85,15 +107,13 @@ app.use((req, res, next) => {
     if (process.env.NODE_ENV !== 'production') {
       await setupVite(app, server);
     } else {
-      // Serve static files from the dist directory in production
-      app.use(express.static(path.join(process.cwd(), "dist", "public")));
-
-      // Handle SPA routing - serve index.html for all non-API routes
-      app.get('*', (req, res) => {
-        // Don't serve index.html for API routes
-        if (!req.path.startsWith('/api')) {
-          res.sendFile(path.join(process.cwd(), "dist", "public", "index.html"));
+      // In production, serve static files and handle client-side routing
+      app.get('*', (req, res, next) => {
+        // Skip API routes and existing files
+        if (req.path.startsWith('/api') || req.path.includes('.')) {
+          return next();
         }
+        res.sendFile(path.join(staticDir, 'index.html'));
       });
     }
 
