@@ -10,37 +10,6 @@ const __dirname = dirname(__filename);
 
 const app = express();
 
-// Create public directory if it doesn't exist
-const publicDir = path.join(process.cwd(), "client", "public");
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir, { recursive: true });
-}
-
-// Specific route for widget.js - must come before other middleware
-app.get('/widget.js', (req, res) => {
-  const widgetPath = path.join(process.cwd(), "client", "public", "widget.js");
-  try {
-    if (fs.existsSync(widgetPath)) {
-      const content = fs.readFileSync(widgetPath, 'utf8');
-      // Set headers explicitly for CORS and caching
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-      res.setHeader('Cache-Control', 'public, max-age=0');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      log(`Serving widget.js with content type: application/javascript`);
-      res.send(content);
-    } else {
-      log(`Widget file not found at ${widgetPath}`);
-      res.status(404).send('Widget not found');
-    }
-  } catch (error) {
-    log(`Error serving widget.js: ${error}`);
-    res.status(500).send('Error serving widget.js');
-  }
-});
-
 // Parse JSON and URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -61,18 +30,26 @@ app.use((req, res, next) => {
   next();
 });
 
+// Determine the correct static files directory based on environment
+const staticDir = process.env.NODE_ENV === 'production'
+  ? path.join(process.cwd(), "dist", "public")
+  : path.join(process.cwd(), "client", "public");
+
+// Ensure static directory exists
+if (!fs.existsSync(staticDir)) {
+  fs.mkdirSync(staticDir, { recursive: true });
+}
+
 // Static file serving with proper headers
-app.use(express.static(path.join(process.cwd(), "client", "public"), {
+app.use(express.static(staticDir, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('Cache-Control', 'public, max-age=0');
     }
-  },
-  fallthrough: true
+  }
 }));
 
-// Logging middleware with improved error handling
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -86,14 +63,7 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api") || path.includes('.js') || path.includes('widget')) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        const stringified = JSON.stringify(capturedJsonResponse);
-        logLine += ` :: ${stringified.length > 100 ? stringified.slice(0, 100) + '...' : stringified}`;
-      }
-      log(logLine);
-    }
+    log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
   });
 
   next();
@@ -103,7 +73,7 @@ app.use((req, res, next) => {
   try {
     const server = registerRoutes(app);
 
-    // Global error handler with improved logging
+    // Global error handler
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
@@ -112,15 +82,18 @@ app.use((req, res, next) => {
     });
 
     // Set up environment-specific configuration
-    if (app.get("env") === "development") {
+    if (process.env.NODE_ENV !== 'production') {
       await setupVite(app, server);
     } else {
-      serveStatic(app);
+      // In production, serve the static files and handle client-side routing
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(staticDir, 'index.html'));
+      });
     }
 
     const PORT = process.env.PORT || 5000;
     server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
-      log(`Server running in ${app.get("env")} mode on port ${PORT}`);
+      log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
     });
   } catch (error) {
     log(`Failed to start server: ${error}`);
