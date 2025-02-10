@@ -25,7 +25,8 @@ app.get('/widget.js', (req, res) => {
       // Set headers explicitly
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       log(`Serving widget.js with content type: application/javascript`);
@@ -44,7 +45,7 @@ app.get('/widget.js', (req, res) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Enable CORS and frame embedding
+// Enable CORS and frame embedding with proper error handling
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   res.header('Access-Control-Allow-Origin', '*');
@@ -62,8 +63,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add express static middleware for public directory
-app.use(express.static(path.join(process.cwd(), "client", "public")));
+// Add express static middleware for public directory with proper error handling
+app.use(express.static(path.join(process.cwd(), "client", "public"), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+  }
+}));
 
 // Logging middleware
 app.use((req, res, next) => {

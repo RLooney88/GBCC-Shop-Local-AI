@@ -299,7 +299,10 @@
   document.body.appendChild(widget);
 
   let chatId = null;
-  const apiBase = window.location.origin;
+  // Update apiBase to work with both local and deployed environments
+  const apiBase = window.location.origin.includes('localhost') 
+    ? window.location.origin 
+    : 'https://' + window.location.hostname;
 
   // Handle chat visibility
   button.addEventListener('click', () => {
