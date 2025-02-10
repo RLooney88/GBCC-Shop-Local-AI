@@ -1,13 +1,14 @@
 import OpenAI from "openai";
+import "dotenv/config";
 import type { ChatMessage, BusinessInfo } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function findMatchingBusinesses(
-  query: string, 
+  query: string,
   businesses: any[],
-  previousMessages: ChatMessage[] = []
+  previousMessages: ChatMessage[] = [],
 ): Promise<{
   message: string;
   matches: BusinessInfo[];
@@ -91,18 +92,18 @@ export async function findMatchingBusinesses(
               "questionContext": "natural explanation of why I'm asking this question",
               "isClosing": boolean,
               "matchReason": "why this is a great match (only for single matches)"
-            }`
+            }`,
         },
         {
           role: "user",
           content: JSON.stringify({
             query,
             businesses,
-            conversationHistory: previousMessages
-          })
-        }
+            conversationHistory: previousMessages,
+          }),
+        },
       ],
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
     });
 
     const content = response.choices[0].message.content;
@@ -112,10 +113,10 @@ export async function findMatchingBusinesses(
 
     const result = JSON.parse(content);
     return {
-      message: result.isClosing 
-        ? result.message 
-        : result.matches.length > 1 
-          ? `${result.message}\n\n${result.followUpQuestion}${result.questionContext ? `\n\n(${result.questionContext})` : ''}`
+      message: result.isClosing
+        ? result.message
+        : result.matches.length > 1
+          ? `${result.message}\n\n${result.followUpQuestion}${result.questionContext ? `\n\n(${result.questionContext})` : ""}`
           : result.message,
       matches: result.matches.map((match: any) => ({
         name: match.name,
@@ -123,9 +124,9 @@ export async function findMatchingBusinesses(
         categories: match.categories,
         phone: match.phone,
         email: match.email,
-        website: match.website
+        website: match.website,
       })),
-      isClosing: result.isClosing
+      isClosing: result.isClosing,
     };
   } catch (error) {
     console.error("Error in findMatchingBusinesses:", error);

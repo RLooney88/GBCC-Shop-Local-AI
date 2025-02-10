@@ -1,4 +1,5 @@
 import axios from "axios";
+import 'dotenv/config'
 import type { User, ChatMessage } from "@shared/schema";
 
 function createConversationSummary(messages: ChatMessage[], user: User): string {

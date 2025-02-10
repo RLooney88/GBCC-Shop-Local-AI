@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import axios from "axios";
+import 'dotenv/config'
 import { storage, processInactiveChats } from "./storage";
 import { insertUserSchema } from "@shared/schema";
 import { findMatchingBusinesses } from "./openai";
