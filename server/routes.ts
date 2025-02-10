@@ -8,14 +8,7 @@ import { z } from "zod";
 import { ZodError } from "zod";
 import { sendToGHL } from "./ghl";
 
-// Add utility function for delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Check for required environment variable
-if (!process.env.SHEETDB_URL) {
-  throw new Error("SHEETDB_URL environment variable is required");
-}
-
+// Environment variables are already validated in index.ts
 const SHEETDB_URL = process.env.SHEETDB_URL;
 
 export function registerRoutes(app: Express): Server {
@@ -28,13 +21,40 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      console.log('Environment Check:', {
+        nodeEnv: process.env.NODE_ENV,
+        hasSheetdbUrl: !!process.env.SHEETDB_URL,
+        hasOpenAiKey: !!process.env.OPENAI_API_KEY,
+        hasGhlWebhook: !!process.env.GHL_WEBHOOK_URL
+      });
+
+      if (!SHEETDB_URL) {
+        console.error('SHEETDB_URL is not available in the environment');
+        throw new Error('SheetDB configuration is missing');
+      }
+
+      console.log(`Attempting to fetch businesses from SheetDB...`);
       const response = await axios.get(SHEETDB_URL);
+
+      if (!response.data) {
+        console.error('No data received from SheetDB');
+        throw new Error('No data received from SheetDB');
+      }
+
       const businesses = response.data;
       businessCache = { data: businesses, timestamp: Date.now() };
+      console.log(`Successfully cached ${businesses.length} businesses`);
       return businesses;
     } catch (error) {
       console.error("Error fetching businesses from SheetDB:", error);
-      throw new Error("Failed to fetch business data");
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data
+        });
+      }
+      throw new Error("Failed to fetch business data: " + (error instanceof Error ? error.message : 'Unknown error'));
     }
   }
 
@@ -121,9 +141,6 @@ export function registerRoutes(app: Express): Server {
       });
 
       if (isClosing) {
-        // Add 6-second delay before sending the final response
-        await delay(6000);
-
         const updatedChat = await storage.getChat(chatId);
         if (updatedChat && !updatedChat.sentToGHL) {
           await sendToGHL({
@@ -140,7 +157,7 @@ export function registerRoutes(app: Express): Server {
         multipleMatches: matches.length > 1,
         matchCount: matches.length,
         isClosing,
-        showTyping: isClosing // Add this flag to indicate typing animation
+        showTyping: isClosing
       });
 
     } catch (error) {
@@ -165,3 +182,6 @@ export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
   return httpServer;
 }
+
+// Add utility function for delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

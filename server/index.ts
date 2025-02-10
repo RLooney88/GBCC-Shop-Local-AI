@@ -5,6 +5,18 @@ import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 
+// Ensure NODE_ENV is set with a default value
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Validate required environment variables at startup
+const requiredEnvVars = ['SHEETDB_URL', 'OPENAI_API_KEY', 'GHL_WEBHOOK_URL'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error(`ERROR: Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -85,7 +97,13 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
+    if (path.startsWith("/api") || path.includes('.js') || path.includes('widget')) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+      log(logLine);
+    }
   });
 
   next();
@@ -101,6 +119,7 @@ app.use((req, res, next) => {
       const message = err.message || "Internal Server Error";
       log(`Error handling request: ${err.message}`);
       res.status(status).json({ message });
+      throw err;
     });
 
     // Set up environment-specific configuration
@@ -142,7 +161,7 @@ app.use((req, res, next) => {
     // Use port from environment variable for Cloud Run compatibility
     const PORT = process.env.PORT || 5000;
     server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
-      log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
   } catch (error) {
     log(`Failed to start server: ${error}`);
