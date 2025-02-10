@@ -85,12 +85,19 @@ app.use((req, res, next) => {
     if (process.env.NODE_ENV !== 'production') {
       await setupVite(app, server);
     } else {
-      // In production, serve the static files and handle client-side routing
+      // Serve static files from the dist directory in production
+      app.use(express.static(path.join(process.cwd(), "dist", "public")));
+
+      // Handle SPA routing - serve index.html for all non-API routes
       app.get('*', (req, res) => {
-        res.sendFile(path.join(staticDir, 'index.html'));
+        // Don't serve index.html for API routes
+        if (!req.path.startsWith('/api')) {
+          res.sendFile(path.join(process.cwd(), "dist", "public", "index.html"));
+        }
       });
     }
 
+    // Use port from environment variable for Cloud Run compatibility
     const PORT = process.env.PORT || 5000;
     server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
       log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
