@@ -107,13 +107,35 @@ app.use((req, res, next) => {
     if (process.env.NODE_ENV !== 'production') {
       await setupVite(app, server);
     } else {
-      // In production, serve static files and handle client-side routing
+      // Serve static files from the dist/public directory
+      const distDir = path.join(process.cwd(), "dist", "public");
+      app.use(express.static(distDir));
+
+      // Special handling for widget.js
+      app.get('/widget.js', (req, res) => {
+        const widgetPath = path.join(distDir, 'widget.js');
+        try {
+          if (fs.existsSync(widgetPath)) {
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.sendFile(widgetPath);
+          } else {
+            log(`Widget file not found at ${widgetPath}`);
+            res.status(404).send('Widget not found');
+          }
+        } catch (error) {
+          log(`Error serving widget.js: ${error}`);
+          res.status(500).send('Error serving widget.js');
+        }
+      });
+
+      // Handle client-side routing by serving index.html for non-API routes
       app.get('*', (req, res, next) => {
-        // Skip API routes and existing files
-        if (req.path.startsWith('/api') || req.path.includes('.')) {
+        if (req.path.startsWith('/api')) {
           return next();
         }
-        res.sendFile(path.join(staticDir, 'index.html'));
+        res.sendFile(path.join(distDir, 'index.html'));
       });
     }
 
