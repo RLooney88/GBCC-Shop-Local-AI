@@ -7,90 +7,57 @@ import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
 
-// Ensure NODE_ENV is set with a default value
-process.env.NODE_ENV = process.env.NODE_ENV || "development";
-
-// Validate required environment variables at startup
-const requiredEnvVars = ["SHEETDB_URL", "OPENAI_API_KEY", "GHL_WEBHOOK_URL"];
-const missingEnvVars = requiredEnvVars.filter(
-  (varName) => !process.env[varName],
-);
-
-if (missingEnvVars.length > 0) {
-  console.error(
-    `ERROR: Missing required environment variables: ${missingEnvVars.join(", ")}`,
-  );
-  process.exit(1);
-}
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 
+// Create public directory if it doesn't exist
+const publicDir = path.join(process.cwd(), "client", "public");
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
+}
+
+// Specific route for widget.js - must come before other middleware
+app.get('/widget.js', (req, res) => {
+  const widgetPath = path.join(process.cwd(), "client", "public", "widget.js");
+  try {
+    if (fs.existsSync(widgetPath)) {
+      const content = fs.readFileSync(widgetPath, 'utf8');
+      // Set headers explicitly
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      log(`Serving widget.js with content type: application/javascript`);
+      res.send(content);
+    } else {
+      log(`Widget file not found at ${widgetPath}`);
+      res.status(404).send('Widget not found');
+    }
+  } catch (error) {
+    log(`Error serving widget.js: ${error}`);
+    res.status(500).send('Error serving widget.js');
+  }
+});
+
 // Parse JSON and URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Enhanced CORS and security headers
+// Enable CORS for all routes
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  res.header("X-Frame-Options", "ALLOW-FROM *");
-  res.header("Content-Security-Policy", "frame-ancestors *");
-
-  // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    res.sendStatus(200);
-    return;
-  }
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('X-Frame-Options', 'ALLOW-FROM *');
+  res.header('Content-Security-Policy', "frame-ancestors *");
   next();
 });
 
-// Determine the correct static files directory based on environment
-const staticDir =
-  process.env.NODE_ENV === "production"
-    ? path.join(process.cwd(), "dist", "public")
-    : path.join(process.cwd(), "client", "public");
-
-// Ensure static directory exists
-if (!fs.existsSync(staticDir)) {
-  fs.mkdirSync(staticDir, { recursive: true });
-}
-
-// Static file serving with proper headers
-app.use(
-  express.static(staticDir, {
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith(".js")) {
-        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-        res.setHeader("Cache-Control", "no-cache");
-      }
-    },
-  }),
-);
-
-// Specific route for widget.js in production
-if (process.env.NODE_ENV === "production") {
-  app.get("/widget.js", (req, res) => {
-    const widgetPath = path.join(staticDir, "widget.js");
-    try {
-      if (fs.existsSync(widgetPath)) {
-        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Cache-Control", "no-cache");
-        res.sendFile(widgetPath);
-      } else {
-        log(`Widget file not found at ${widgetPath}`);
-        res.status(404).send("Widget not found");
-      }
-    } catch (error) {
-      log(`Error serving widget.js: ${error}`);
-      res.status(500).send("Error serving widget.js");
-    }
-  });
-}
+// Add express static middleware for public directory
+app.use(express.static(path.join(process.cwd(), "client", "public")));
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -106,15 +73,16 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (
-      path.startsWith("/api") ||
-      path.includes(".js") ||
-      path.includes("widget")
-    ) {
+    if (path.startsWith("/api") || path.includes('.js') || path.includes('widget')) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
       log(logLine);
     }
   });
@@ -123,65 +91,26 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  try {
-    const server = registerRoutes(app);
+  const server = registerRoutes(app);
 
-    // Global error handler
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      log(`Error handling request: ${err.message}`);
-      res.status(status).json({ message });
-      throw err;
-    });
+  // Global error handler
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    log(`Error handling request: ${err.message}`);
+    res.status(status).json({ message });
+    throw err;
+  });
 
-    // Set up environment-specific configuration
-    if (process.env.NODE_ENV !== "production") {
-      await setupVite(app, server);
-    } else {
-      // Serve static files from the dist/public directory
-      const distDir = path.join(process.cwd(), "dist", "public");
-      app.use(express.static(distDir));
-
-      // Special handling for widget.js
-      app.get("/widget.js", (req, res) => {
-        const widgetPath = path.join(distDir, "widget.js");
-        try {
-          if (fs.existsSync(widgetPath)) {
-            res.setHeader(
-              "Content-Type",
-              "application/javascript; charset=utf-8",
-            );
-            res.setHeader("Access-Control-Allow-Origin", "*");
-            res.setHeader("Cache-Control", "no-cache");
-            res.sendFile(widgetPath);
-          } else {
-            log(`Widget file not found at ${widgetPath}`);
-            res.status(404).send("Widget not found");
-          }
-        } catch (error) {
-          log(`Error serving widget.js: ${error}`);
-          res.status(500).send("Error serving widget.js");
-        }
-      });
-
-      // Handle client-side routing by serving index.html for non-API routes
-      app.get("*", (req, res, next) => {
-        if (req.path.startsWith("/api")) {
-          return next();
-        }
-        res.sendFile(path.join(distDir, "index.html"));
-      });
-    }
-
-    // Use port from environment variable for Cloud Run compatibility
-    const PORT = process.env.PORT || 5000;
-    server.listen(parseInt(PORT.toString()), "0.0.0.0", () => {
-      log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-      log(`Server URL: ${process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:' + PORT}`);
-    });
-  } catch (error) {
-    log(`Failed to start server: ${error}`);
-    process.exit(1);
+  // Set up Vite or serve static files based on environment
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
   }
+
+  const PORT = 5000;
+  server.listen(PORT, "0.0.0.0", () => {
+    log(`serving on port ${PORT}`);
+  });
 })();
